@@ -1,3 +1,10 @@
+<!--
+Arquivo: dashboard.html
+Cole este arquivo INTEIRO, substituindo o seu dashboard.html atual.
+Observação: NÃO inclui lógica de gráficos aqui — isso fica em js/dashboard.js.
+Este HTML só garante: estrutura, IDs corretos, tabela oculta, botões (sync/pdf/tabela), áreas dos gráficos e insights.
+-->
+
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
@@ -6,61 +13,241 @@
   <title>Dashboard | Agenda SISREG</title>
 
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
-  
+  <link rel="stylesheet" href="shared/css/theme.css">
   <link rel="stylesheet" href="shared/css/variables.css">
   <link rel="stylesheet" href="shared/css/base.css">
   <link rel="stylesheet" href="shared/css/style.css">
 
+  <!-- Libs -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
+
+  <style>
+    /* Mantive APENAS o mínimo para a página não “quebrar”
+       (o visual deve vir do theme.css) */
+    body{ margin:0; font-family:'Inter',sans-serif; }
+    #secTabela{ display:none; }
+    .full-width{ grid-column: 1 / -1; }
+
+    /* [AJUSTE] Botão "Ver Tabela" dentro do card Insights */
+    #cardInsights .card-head{
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 10px;
+    }
+    
+    /* override do .card h3 (pra não dar margem duplicada) */
+    #cardInsights .card-head h3{
+      margin: 0;
+    }
+    
+    #cardInsights #btnToggleTabela{
+      white-space: nowrap;
+    }
+
+  </style>
 </head>
 
-<body class="dashboard-page">
-  <div id="header-placeholder"></div>
-  <div id="navbar-placeholder"></div>
+<body>
 
-  <main id="dashboardArea" class="container">
-    <header class="dashboard-header">
-      <h1 style="color: var(--color-primary);">Unidade: <span id="txtUnidade">Carregando...</span></h1>
-      <div class="actions-header">
-        <button id="btnSincronizar" class="btn btn-primary">🔄 Sincronizar</button>
-        <button id="btnExportarPDF" class="btn" style="background: var(--color-accent-red); color: white;">📄 PDF</button>
-        <button id="btnLogout" class="btn">Sair</button>
+  <!-- HEADER -->
+  <header class="dash-header">
+    <div style="display:flex;justify-content:space-between;align-items:center;">
+      <div class="unit-info">
+        <h1 id="txtUnidade">Carregando unidade...</h1>
+        <p>Painel Gerencial de Escalas • <strong>SISREG Amazonas</strong></p>
       </div>
-    </header>
-
-    <div class="dashboard-grid">
-      <div class="card kpi-card blue"><h3>Total de Vagas</h3><p id="totalVagas">0</p></div>
-      <div class="card kpi-card green"><h3>Profissionais</h3><p id="totalProfissionais">0</p></div>
-      <div class="card kpi-card yellow"><h3>Procedimentos</h3><p id="totalProcedimentos">0</p></div>
+  
+      <div class="header-btns">
+        <button id="btnSincronizar" class="btn-main btn-sync">🔄 Sincronizar</button>
+        <button id="btnExportarPDF" class="btn-main">📄 Exportar PDF</button>
+        <a href="escalas.html" style="text-decoration:none;">
+          <button class="btn-main btn-new">➕ Nova Escala</button>
+        </a>
+        <button id="btnLogout" class="btn-main btn-logout">Sair</button>
+      </div>
     </div>
+  </header>
 
-    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; margin-top: 20px;">
-      <section class="card"><canvas id="chartVagas"></canvas></section>
-      <section class="card"><canvas id="chartProfissionais"></canvas></section>
-    </div>
+  <!-- FILTRO (Fase 2/3 usam esse id) -->
+  <section class="filter-section">
+    <label for="filtroMes">Filtrar por Mês de Vigência:</label>
+    <select id="filtroMes">
+      <option value="todos">Mostrar Todos</option>
+      <option value="01">Janeiro</option><option value="02">Fevereiro</option><option value="03">Março</option>
+      <option value="04">Abril</option><option value="05">Maio</option><option value="06">Junho</option>
+      <option value="07">Julho</option><option value="08">Agosto</option><option value="09">Setembro</option>
+      <option value="10">Outubro</option><option value="11">Novembro</option><option value="12">Dezembro</option>
+    </select>
+  </section>
 
-    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px; margin-top: 20px;">
-      <section class="card" style="border-left: 5px solid var(--color-primary);"><p id="insightMaiorOferta">-</p></section>
-      <section class="card" style="border-left: 5px solid var(--color-accent-yellow);"><p id="insightDiaCritico">-</p></section>
-      <section class="card" style="border-left: 5px solid var(--color-accent-green);"><p id="insightMedia">0</p></section>
-    </div>
+  <!-- ÁREA DO DASHBOARD (usada no PDF) -->
+  <main class="container" id="dashboardArea">
 
-    <button id="btnToggleTabela" class="btn" style="margin-top: 20px;">📋 Ver Tabela</button>
-    <section id="secaoTabela" class="card" style="display: none; margin-top: 15px;">
-      <table id="tabelaDados" style="width: 100%;">
-        <thead><tr style="background: var(--color-primary); color: white;"><th>Profissional</th><th>Procedimento</th><th>Vagas</th><th>Início</th></tr></thead>
-        <tbody id="corpoTabela"></tbody>
-      </table>
+    <!-- KPIs (IDs devem bater com dashboard.js) -->
+    <section class="kpi-container">
+      <div class="kpi-card">
+        <h3>Total de Vagas</h3>
+        <p id="kpiVagas">0</p>
+      </div>
+
+      <div class="kpi-card">
+        <h3>% Vagas Retorno</h3>
+        <p id="kpiRetorno">0%</p>
+      </div>
+
+      <div class="kpi-card">
+        <h3>Profissionais</h3>
+        <p id="kpiProfissionais">0</p>
+      </div>
+
+      <div class="kpi-card">
+        <h3>Procs. Únicos</h3>
+        <p id="kpiProcedimentos">0</p>
+      </div>
+
+      <div class="kpi-card">
+        <h3>Procedimento Líder</h3>
+        <p id="kpiLider" style="font-size:1rem;">-</p>
+      </div>
     </section>
+
+    <!-- GRID DE GRÁFICOS -->
+    <section class="dashboard-grid">
+
+      <div class="card">
+        <h3>🔥 Oferta por Dia e Horário</h3>
+        <canvas id="chartHeatmap"></canvas>
+      </div>
+
+      <div class="card">
+        <h3>🎯 Funil de Oferta</h3>
+        <canvas id="chartFunil"></canvas>
+      </div>
+
+      <div class="card">
+        <h3>🧬 Perfil da Unidade</h3>
+        <canvas id="chartRadar"></canvas>
+      </div>
+
+      <div class="card">
+        <h3>🫧 Profissionais por Impacto</h3>
+        <canvas id="chartBolhas"></canvas>
+      </div>
+
+      <div class="card">
+        <h3>🟡 Distribuição de Vagas</h3>
+        <canvas id="chartDonut"></canvas>
+      </div>
+
+      <div class="card">
+        <h3>📈 Evolução da Vigência</h3>
+        <canvas id="chartLinha"></canvas>
+      </div>
+
+      <div class="card full-width" id="cardInsights">
+        <div class="card-head">
+          <h3>🧠 Insights Automáticos</h3>
+          <button class="btn btn-toggle" id="btnToggleTabela">📋 Ver Tabela</button>
+        </div>
+        <ul id="listaInsights"></ul>
+      </div>
+
+
+      <!-- (Opcional) se seu JS da Fase 3 usar KPI de média, mantenha este id (não quebra se não usar) -->
+      <span id="kpiMedia" style="display:none;"></span>
+
+    </section>
+
+    <!-- TABELA (OCULTA) — IDs precisam bater com dashboard.js -->
+    <section id="secTabela" class="card full-width" style="margin-top:20px;">
+      <h3>📋 Tabela Detalhada</h3>
+      <div style="overflow:auto;">
+        <table id="tabEscalas">
+          <thead>
+            <tr>
+              <th>CPF</th>
+              <th>Profissional</th>
+              <th>Cód. Proc.</th>
+              <th>Procedimento</th>
+              <th>Exames</th>
+              <th>Dias</th>
+              <th>Início</th>
+              <th>Fim</th>
+              <th>Vagas</th>
+              <th>Vig. Início</th>
+              <th>Vig. Fim</th>
+            </tr>
+          </thead>
+          <tbody id="corpoTabela"></tbody>
+        </table>
+      </div>
+    </section>
+
   </main>
 
-  <footer id="footerCreditos" class="app-footer"></footer>
-
+  <!-- FOOTER (dashboard.js preenche esse id) -->
+ <footer id="footerCreditos" class="app-footer"></footer>
+  
+  <!-- Seu JS principal -->
   <script src="config/config.js"></script>
   <script src="shared/components/header.js"></script>
-  <script src="shared/components/navbar.js"></script>
   <script src="js/dashboard.js"></script>
+
+  <!-- Somente eventos “de tela” (não mexe na lógica do dashboard.js) -->
+  <script>
+    // Toggle da tabela
+    document.getElementById("btnToggleTabela").onclick = () => {
+      const sec = document.getElementById("secTabela");
+      const aberto = sec.style.display === "block";
+      sec.style.display = aberto ? "none" : "block";
+      document.getElementById("btnToggleTabela").textContent = aberto ? "📋 Ver Tabela" : "📋 Ocultar Tabela";
+    };
+
+    // Exportar PDF do dashboardArea
+    document.getElementById("btnExportarPDF").onclick = async () => {
+      const area = document.getElementById("dashboardArea");
+
+      // melhora captura: espera 1 frame
+      await new Promise(r => requestAnimationFrame(r));
+
+      const canvas = await html2canvas(area, { scale: 2, useCORS: true });
+      const img = canvas.toDataURL("image/png");
+
+      const { jsPDF } = window.jspdf;
+      const pdf = new jsPDF("p", "mm", "a4");
+
+      const pageW = 210;
+      const pageH = 297;
+
+      const imgW = pageW;
+      const imgH = (canvas.height * imgW) / canvas.width;
+
+      let y = 10;
+      if (imgH <= pageH - 20) {
+        pdf.addImage(img, "PNG", 0, y, imgW, imgH);
+      } else {
+        // Paginação simples se ficar maior que A4
+        let remaining = imgH;
+        let position = 10;
+        pdf.addImage(img, "PNG", 0, position, imgW, imgH);
+        remaining -= (pageH - 20);
+
+        while (remaining > 0) {
+          pdf.addPage();
+          position = 10 - (imgH - remaining);
+          pdf.addImage(img, "PNG", 0, position, imgW, imgH);
+          remaining -= (pageH - 20);
+        }
+      }
+
+      const unidade = (document.getElementById("txtUnidade").textContent || "UNIDADE").trim();
+      pdf.save(`Dashboard_${unidade}.pdf`);
+    };
+  </script>
+
 </body>
 </html>
