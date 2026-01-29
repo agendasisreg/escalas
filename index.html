@@ -287,17 +287,19 @@
             </select>
           </div>
           
-          <div class="form-group">
-            <label for="password">Senha de Acesso (CNES)</label>
-            <input 
-              type="password" 
-              id="password" 
-              class="form-control" 
-              placeholder="Digite o CNES da unidade" 
-              autocomplete="off"
-              required
-            />
-          </div>
+        <!-- Por esta nova versão -->
+        <div class="form-group">
+          <label for="unidadeInput">Unidade de Saúde</label>
+          <input 
+            type="text" 
+            id="unidadeInput" 
+            class="form-control" 
+            placeholder="Digite o nome da unidade..." 
+            autocomplete="off"
+            required
+          />
+          <div id="listaUnidades" class="autocomplete"></div>
+        </div>
           
           <button type="submit" class="btn-login" id="btnSubmit">
             <span>Entrar no Sistema</span>
