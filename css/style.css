@@ -1,13 +1,20 @@
-/* css/style.css - Estilos modernos e profissionais */
+/* ============================================================
+CSS MODERNO E PROFISSIONAL - SISREG ESCALAS
+============================================================ */
+
+/* ==================== VARIÁVEIS CSS ==================== */
 :root {
   /* Cores principais */
   --am-blue: #1a2a6c;
   --am-green: #4CAF50;
   --am-yellow: #fdbb2d;
   --am-red: #b21f1f;
+  --am-orange: #ff9800;
+  --am-blue-light: #2196F3;
   --am-gray: #9aa0a6;
   --am-light: #f4f7f6;
   --am-dark: #1f2937;
+  --am-white: #ffffff;
   
   /* Cores de fundo */
   --bg-primary: #ffffff;
@@ -19,35 +26,51 @@
   --shadow-md: 0 4px 12px rgba(0,0,0,0.10);
   --shadow-lg: 0 10px 24px rgba(0,0,0,0.12);
   --shadow-xl: 0 16px 32px rgba(0,0,0,0.15);
+  --shadow-2xl: 0 24px 48px rgba(0,0,0,0.18);
   
   /* Bordas */
   --border-radius-sm: 8px;
   --border-radius-md: 12px;
   --border-radius-lg: 16px;
   --border-radius-xl: 20px;
+  --border-radius-2xl: 24px;
   
   /* Transições */
   --transition-fast: 0.2s ease;
   --transition-normal: 0.3s ease;
   --transition-slow: 0.4s ease;
+  
+  /* Espaçamentos */
+  --spacing-xs: 4px;
+  --spacing-sm: 8px;
+  --spacing-md: 16px;
+  --spacing-lg: 24px;
+  --spacing-xl: 32px;
+  --spacing-2xl: 48px;
 }
 
+/* ==================== RESET BÁSICO ==================== */
 * {
   margin: 0;
   padding: 0;
   box-sizing: border-box;
 }
 
+html {
+  scroll-behavior: smooth;
+}
+
 body {
-  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
   background: var(--am-light);
   color: var(--am-dark);
   line-height: 1.6;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
 }
 
-/* ========================================
-HEADER - Design moderno com gradient
-======================================== */
+/* ==================== HEADER ==================== */
 .dash-header {
   background: linear-gradient(135deg, var(--am-blue) 0%, #0d1b44 100%);
   padding: 16px 24px;
@@ -61,11 +84,23 @@ HEADER - Design moderno com gradient
   top: 0;
   z-index: 100;
   backdrop-filter: blur(10px);
+  animation: slideDownHeader 0.4s ease;
+}
+
+@keyframes slideDownHeader {
+  from {
+    transform: translateY(-100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
 }
 
 .unit-info h1 {
   font-size: 1.3rem;
-  color: #ffffff;
+  color: var(--am-white);
   margin: 0;
   font-weight: 800;
   letter-spacing: 0.3px;
@@ -88,9 +123,7 @@ HEADER - Design moderno com gradient
   justify-content: flex-end;
 }
 
-/* ========================================
-BOTÕES - Design moderno com efeitos
-======================================== */
+/* ==================== BOTÕES ==================== */
 .btn-main {
   padding: 12px 20px;
   border-radius: var(--border-radius-md);
@@ -107,6 +140,7 @@ BOTÕES - Design moderno com efeitos
   white-space: nowrap;
   position: relative;
   overflow: hidden;
+  box-shadow: var(--shadow-md);
 }
 
 .btn-main::before {
@@ -127,16 +161,22 @@ BOTÕES - Design moderno com efeitos
 
 .btn-main:hover {
   transform: translateY(-2px);
-  box-shadow: 0 6px 16px rgba(0,0,0,0.15);
+  box-shadow: var(--shadow-xl);
 }
 
 .btn-main:active {
   transform: translateY(0);
 }
 
+.btn-main:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
+}
+
 .btn-back {
   background: rgba(255,255,255,0.15);
-  color: #ffffff;
+  color: var(--am-white);
 }
 
 .btn-back:hover {
@@ -144,19 +184,18 @@ BOTÕES - Design moderno com efeitos
 }
 
 .btn-logout {
-  background: #ffffff;
+  background: var(--am-white);
   color: var(--am-red);
-  box-shadow: var(--shadow-md);
 }
 
 .btn-logout:hover {
-  background: #ffffff;
-  box-shadow: var(--shadow-lg);
+  background: var(--am-white);
+  box-shadow: var(--shadow-2xl);
 }
 
 .btn-sync {
   background: linear-gradient(135deg, var(--am-blue) 0%, #0d1b44 100%);
-  color: #ffffff;
+  color: var(--am-white);
 }
 
 .btn-sync:hover {
@@ -165,16 +204,14 @@ BOTÕES - Design moderno com efeitos
 
 .btn-new {
   background: linear-gradient(135deg, var(--am-green) 0%, #3d8b40 100%);
-  color: #ffffff;
+  color: var(--am-white);
 }
 
 .btn-new:hover {
   background: linear-gradient(135deg, #3d8b40 0%, var(--am-green) 100%);
 }
 
-/* ========================================
-CONTAINER - Layout centralizado
-======================================== */
+/* ==================== CONTAINER ==================== */
 .container,
 .page {
   width: min(1400px, calc(100% - 40px));
@@ -182,9 +219,7 @@ CONTAINER - Layout centralizado
   max-width: 100%;
 }
 
-/* ========================================
-CARDS - Design moderno com sombras
-======================================== */
+/* ==================== CARDS ==================== */
 .card {
   background: var(--bg-primary);
   border-radius: var(--border-radius-lg);
@@ -263,9 +298,7 @@ CARDS - Design moderno com sombras
   line-height: 1.5;
 }
 
-/* ========================================
-KPI CARDS - Design elegante
-======================================== */
+/* ==================== KPI CARDS ==================== */
 .kpi-container {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
@@ -317,9 +350,7 @@ KPI CARDS - Design elegante
   line-height: 1;
 }
 
-/* ========================================
-FORMULÁRIOS - Design clean
-======================================== */
+/* ==================== FORMULÁRIOS ==================== */
 #formEscala {
   display: grid;
   grid-template-columns: repeat(12, 1fr);
@@ -380,9 +411,7 @@ FORMULÁRIOS - Design clean
   cursor: not-allowed;
 }
 
-/* ========================================
-AUTOCOMPLETE - Design moderno
-======================================== */
+/* ==================== AUTOCOMPLETE ==================== */
 .autocomplete {
   position: absolute;
   top: calc(100% + 8px);
@@ -429,13 +458,12 @@ AUTOCOMPLETE - Design moderno
   padding-left: 20px;
 }
 
-/* ========================================
-BOTÕES DE AÇÃO - Design destacado
-======================================== */
+/* ==================== BOTÕES DE AÇÃO ==================== */
 .btn-acao,
-#btnExportarCSV {
+#btnExportarCSV,
+#btnLimparTudo {
   background: linear-gradient(135deg, var(--am-blue) 0%, #0d1b44 100%);
-  color: #ffffff;
+  color: var(--am-white);
   border: none;
   padding: 16px 24px;
   border-radius: var(--border-radius-md);
@@ -450,10 +478,16 @@ BOTÕES DE AÇÃO - Design destacado
   gap: 12px;
   position: relative;
   overflow: hidden;
+  margin-bottom: 12px;
+}
+
+#btnLimparTudo {
+  background: linear-gradient(135deg, var(--am-red) 0%, #9a1a1a 100%);
 }
 
 .btn-acao::before,
-#btnExportarCSV::before {
+#btnExportarCSV::before,
+#btnLimparTudo::before {
   content: '';
   position: absolute;
   top: 0;
@@ -465,20 +499,28 @@ BOTÕES DE AÇÃO - Design destacado
 }
 
 .btn-acao:hover::before,
-#btnExportarCSV:hover::before {
+#btnExportarCSV:hover::before,
+#btnLimparTudo:hover::before {
   left: 100%;
 }
 
 .btn-acao:hover,
 #btnExportarCSV:hover {
   background: linear-gradient(135deg, var(--am-green) 0%, #3d8b40 100%);
+}
+
+#btnLimparTudo:hover {
+  background: linear-gradient(135deg, #9a1a1a 0%, var(--am-red) 100%);
+}
+
+.btn-acao:hover,
+#btnExportarCSV:hover,
+#btnLimparTudo:hover {
   transform: translateY(-2px);
   box-shadow: var(--shadow-xl);
 }
 
-/* ========================================
-TABELAS - Design profissional
-======================================== */
+/* ==================== TABELAS ==================== */
 .table-wrapper {
   overflow-x: auto;
   border-radius: var(--border-radius-lg);
@@ -498,7 +540,7 @@ thead th {
   position: sticky;
   top: 0;
   background: linear-gradient(135deg, var(--am-blue) 0%, #0d1b44 100%);
-  color: #ffffff;
+  color: var(--am-white);
   text-align: left;
   padding: 14px 16px;
   font-size: 0.82rem;
@@ -533,9 +575,7 @@ tbody tr:last-child td {
   border-bottom: none;
 }
 
-/* ========================================
-FOOTER - Design clean
-======================================== */
+/* ==================== FOOTER ==================== */
 footer {
   width: min(1400px, calc(100% - 40px));
   margin: 24px auto 24px auto;
@@ -552,9 +592,7 @@ footer strong {
   color: var(--am-blue);
 }
 
-/* ========================================
-RESPONSIVO
-======================================== */
+/* ==================== RESPONSIVO ==================== */
 @media (max-width: 1024px) {
   #formEscala {
     grid-template-columns: repeat(6, 1fr);
@@ -605,5 +643,13 @@ RESPONSIVO
   .campo input {
     padding: 12px;
     font-size: 0.9rem;
+  }
+  
+  .dash-header {
+    padding: 12px;
+  }
+  
+  .unit-info h1 {
+    font-size: 1.1rem;
   }
 }
