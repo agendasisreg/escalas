@@ -158,4 +158,19 @@ select.form-control option[value=""][disabled] {
   .login-brand__text h1 {
     font-size: 1.5rem;
   }
+  
+  .search-suggestions div {
+    padding: 12px 15px;
+    cursor: pointer;
+    border-bottom: 1px solid var(--color-bg-light);
+    font-size: 0.9rem;
+    transition: var(--am-transition);
 }
+
+.search-suggestions div:hover {
+    background-color: var(--am-bg-main);
+    color: var(--color-primary);
+    font-weight: 600;
+}
+}
+
