@@ -1,0 +1,146 @@
+/**
+ * Variáveis CSS Globais
+ * Cores, espaçamentos, tamanhos e outros valores reutilizáveis
+ * Mantenha tudo aqui para fácil manutenção
+ */
+
+:root {
+  /* ── Cores Primárias ─────────────────────────────────────────────────── */
+  --color-primary: #2196F3;
+  --color-primary-dark: #1976D2;
+  --color-primary-light: #E3F2FD;
+  --color-secondary: #FFC107;
+  --color-secondary-dark: #FFA000;
+  --color-secondary-light: #FFF8E1;
+
+  /* ── Cores de Status ──────────────────────────────────────────────────── */
+  --color-success: #4CAF50;
+  --color-success-dark: #388E3C;
+  --color-success-light: #E8F5E9;
+  --color-danger: #F44336;
+  --color-danger-dark: #D32F2F;
+  --color-danger-light: #FFEBEE;
+  --color-warning: #FF9800;
+  --color-warning-dark: #F57C00;
+  --color-warning-light: #FFF3E0;
+  --color-info: #9C27B0;
+  --color-info-dark: #7B1FA2;
+  --color-info-light: #F3E5F5;
+
+  /* ── Cores Neutras ────────────────────────────────────────────────────── */
+  --color-dark: #212121;
+  --color-gray-dark: #424242;
+  --color-gray: #757575;
+  --color-gray-light: #9E9E9E;
+  --color-light: #F5F5F5;
+  --color-lighter: #FAFAFA;
+  --color-white: #FFFFFF;
+
+  /* ── Cores de Fundo ───────────────────────────────────────────────────── */
+  --bg-primary: #FFFFFF;
+  --bg-secondary: #F5F5F5;
+  --bg-tertiary: #E0E0E0;
+  --bg-dark: #212121;
+
+  /* ── Cores de Texto ───────────────────────────────────────────────────── */
+  --text-primary: #212121;
+  --text-secondary: #757575;
+  --text-tertiary: #9E9E9E;
+  --text-light: #FFFFFF;
+  --text-link: #2196F3;
+
+  /* ── Bordas ───────────────────────────────────────────────────────────── */
+  --border-color: #E0E0E0;
+  --border-radius-sm: 4px;
+  --border-radius-md: 8px;
+  --border-radius-lg: 12px;
+  --border-radius-full: 50%;
+  --border-width: 1px;
+  --border-style: solid;
+
+  /* ── Sombras ──────────────────────────────────────────────────────────── */
+  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.12), 0 1px 2px rgba(0, 0, 0, 0.24);
+  --shadow-md: 0 3px 6px rgba(0, 0, 0, 0.16), 0 3px 6px rgba(0, 0, 0, 0.23);
+  --shadow-lg: 0 10px 20px rgba(0, 0, 0, 0.19), 0 6px 6px rgba(0, 0, 0, 0.23);
+  --shadow-xl: 0 14px 28px rgba(0, 0, 0, 0.25), 0 10px 10px rgba(0, 0, 0, 0.22);
+
+  /* ── Espaçamentos ─────────────────────────────────────────────────────── */
+  --spacing-xs: 4px;
+  --spacing-sm: 8px;
+  --spacing-md: 16px;
+  --spacing-lg: 24px;
+  --spacing-xl: 32px;
+  --spacing-2xl: 48px;
+  --spacing-3xl: 64px;
+
+  /* ── Tamanhos ─────────────────────────────────────────────────────────── */
+  --size-header-height: 64px;
+  --size-navbar-width: 240px;
+  --size-navbar-width-collapsed: 64px;
+  --size-footer-height: 64px;
+
+  /* ── Tipografia ───────────────────────────────────────────────────────── */
+  --font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  --font-size-xs: 12px;
+  --font-size-sm: 14px;
+  --font-size-md: 16px;
+  --font-size-lg: 18px;
+  --font-size-xl: 20px;
+  --font-size-2xl: 24px;
+  --font-size-3xl: 32px;
+  --font-size-4xl: 40px;
+  --font-size-5xl: 48px;
+  --font-size-6xl: 64px;
+
+  --font-weight-light: 300;
+  --font-weight-regular: 400;
+  --font-weight-medium: 500;
+  --font-weight-semibold: 600;
+  --font-weight-bold: 700;
+
+  --line-height-sm: 1.2;
+  --line-height-md: 1.5;
+  --line-height-lg: 1.8;
+
+  /* ── Transições ───────────────────────────────────────────────────────── */
+  --transition-fast: 0.15s ease;
+  --transition-normal: 0.3s ease;
+  --transition-slow: 0.5s ease;
+
+  /* ── Z-Index ──────────────────────────────────────────────────────────── */
+  --z-index-header: 1000;
+  --z-index-navbar: 900;
+  --z-index-modal: 2000;
+  --z-index-tooltip: 3000;
+  --z-index-notification: 4000;
+
+  /* ── Breakpoints (Responsividade) ─────────────────────────────────────── */
+  --breakpoint-xs: 0;
+  --breakpoint-sm: 576px;
+  --breakpoint-md: 768px;
+  --breakpoint-lg: 992px;
+  --breakpoint-xl: 1200px;
+  --breakpoint-xxl: 1400px;
+
+  /* ── Cores dos Gráficos ───────────────────────────────────────────────── */
+  --chart-tipo-consulta: #FFC107;
+  --chart-tipo-grupo: #2196F3;
+  --chart-tipo-retorno: #F44336;
+  --chart-tipo-exame: #FF9800;
+  --chart-tipo-outros: #9E9E9E;
+
+  --chart-dia-dom: rgba(26, 42, 108, 0.12);
+  --chart-dia-seg: rgba(26, 42, 108, 0.18);
+  --chart-dia-ter: rgba(26, 42, 108, 0.24);
+  --chart-dia-qua: rgba(26, 42, 108, 0.30);
+  --chart-dia-qui: rgba(26, 42, 108, 0.36);
+  --chart-dia-sex: rgba(26, 42, 108, 0.42);
+  --chart-dia-sab: rgba(26, 42, 108, 0.48);
+
+  /* ── Cores de Status ──────────────────────────────────────────────────── */
+  --status-agendado: #2196F3;
+  --status-confirmado: #4CAF50;
+  --status-cancelado: #F44336;
+  --status-aguardando: #FF9800;
+  --status-concluido: #9C27B0;
+}
