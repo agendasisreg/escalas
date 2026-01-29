@@ -1,26 +1,161 @@
+/* --- Reset e Estilos Base --- */
 body {
-  font-family: Arial, sans-serif;
-  max-width: 700px;
-  margin: auto;
+  margin: 0;
+  padding: 0;
+  font-family: var(--font-family-base);
+  background-color: var(--color-primary); /* Fundo azul escuro */
+  color: var(--color-text-dark);
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
 }
 
-label {
-  display: block;
-  margin-top: 12px;
-}
-
-select, input {
+/* --- Container Principal do Login --- */
+.login-container {
   width: 100%;
-  padding: 6px;
+  max-width: 450px;
+  padding: 20px;
+  box-sizing: border-box;
+  text-align: center;
 }
 
-button {
-  margin-top: 20px;
-  padding: 10px;
+/* --- Marca (Logo e Título) --- */
+.login-brand {
+  margin-bottom: 40px;
+  color: var(--color-white);
 }
 
-.aviso {
-  color: red;
-  font-size: 0.9em;
+.login-brand__icon {
+  background-color: rgba(255, 255, 255, 0.1); /* Fundo translúcido para o ícone */
+  width: 70px;
+  height: 70px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 15px;
+  border: 2px solid rgba(255, 255, 255, 0.2);
 }
 
+.login-brand__text h1 {
+  margin: 0;
+  font-size: 1.8rem;
+  font-weight: 700;
+  letter-spacing: 1px;
+}
+
+.login-brand__text p {
+  margin: 5px 0 0;
+  font-size: 0.9rem;
+  opacity: 0.8;
+}
+
+/* --- Card de Login --- */
+.login-card {
+  background-color: var(--color-white);
+  padding: 40px;
+  border-radius: var(--border-radius-card);
+  box-shadow: var(--box-shadow-card);
+  border-top: 5px solid var(--color-accent-yellow); /* A borda amarela de destaque */
+}
+
+.login-card h2 {
+  margin-top: 0;
+  color: var(--color-primary);
+  font-size: 1.5rem;
+}
+
+.login-card__subtitle {
+  color: var(--color-text-gray);
+  margin-bottom: 30px;
+  font-size: 0.95rem;
+}
+
+/* --- Formulário --- */
+.form-group {
+  margin-bottom: 20px;
+  text-align: left;
+}
+
+.form-group label {
+  display: block;
+  margin-bottom: 8px;
+  font-weight: 600;
+  color: var(--color-primary);
+  font-size: 0.9rem;
+}
+
+/* Estilo para Inputs e Select */
+.form-control {
+  width: 100%;
+  padding: 12px 15px;
+  font-size: 1rem;
+  font-family: inherit;
+  color: var(--color-text-dark);
+  background-color: var(--color-bg-light);
+  border: 1px solid var(--color-border);
+  border-radius: var(--border-radius-input);
+  box-sizing: border-box; /* Garante que o padding não aumente a largura */
+  transition: border-color var(--transition-speed);
+}
+
+.form-control:focus {
+  outline: none;
+  border-color: var(--color-primary);
+  background-color: var(--color-white);
+}
+
+/* Estilo específico para o select quando está carregando ou vazio */
+select.form-control:invalid,
+select.form-control option[value=""][disabled] {
+  color: var(--color-text-gray);
+}
+
+/* --- Botão --- */
+.btn-primary {
+  width: 100%;
+  padding: 15px;
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--color-white);
+  background-color: var(--color-primary);
+  border: none;
+  border-radius: var(--border-radius-input);
+  cursor: pointer;
+  transition: background-color var(--transition-speed), transform 0.1s;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.btn-primary:hover {
+  background-color: var(--color-primary-hover);
+}
+
+.btn-primary:active {
+  transform: scale(0.98); /* Efeito de clique */
+}
+
+/* --- Rodapé --- */
+.app-footer--login {
+  margin-top: 40px;
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 0.85rem;
+  text-align: center;
+}
+
+.app-footer--login strong {
+  color: var(--color-white);
+}
+
+/* --- Responsividade --- */
+@media (max-width: 480px) {
+  .login-card {
+    padding: 30px 20px;
+  }
+  
+  .login-brand__text h1 {
+    font-size: 1.5rem;
+  }
+}
