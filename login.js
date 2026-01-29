@@ -4,7 +4,6 @@
  */
 
 import { CONFIG } from './config/config.js';
-import { loadCSV } from './scripts/data-loader.js';
 
 // Variáveis globais
 let unidades = [];
@@ -15,6 +14,9 @@ let selectedUnidade = null;
  */
 async function initLogin() {
     console.log('Inicializando página de login...');
+    
+    // Configura créditos do rodapé
+    setupFooterCredits();
     
     // Carrega unidades do CSV
     await carregarUnidades();
@@ -27,9 +29,22 @@ async function initLogin() {
     
     // Configura formulário
     setupLoginForm();
-    
-    // Configura créditos do rodapé
-    setupFooterCredits();
+}
+
+/**
+ * Configura créditos do rodapé
+ */
+function setupFooterCredits() {
+    const footer = document.getElementById('footerCreditos');
+    if (footer) {
+        // Divide os créditos em duas linhas
+        const creditsHtml = CONFIG.credits
+            .replace('© ', '')
+            .replace(' - ', ' - <strong>')
+            .replace(' | ', '</strong> | ');
+        
+        footer.innerHTML = creditsHtml;
+    }
 }
 
 /**
@@ -37,7 +52,14 @@ async function initLogin() {
  */
 async function carregarUnidades() {
     try {
-        unidades = await loadCSV('/data/unidades.csv');
+        const response = await fetch('/data/unidades.csv');
+        
+        if (!response.ok) {
+            throw new Error(`Erro ao carregar unidades: ${response.status}`);
+        }
+
+        const csvText = await response.text();
+        unidades = parseCSV(csvText);
         
         console.log(`✓ Carregadas ${unidades.length} unidades`);
         
@@ -50,6 +72,69 @@ async function carregarUnidades() {
         console.error('Erro ao carregar unidades:', error);
         showError('Erro ao carregar lista de unidades. Tente novamente.');
     }
+}
+
+/**
+ * Processa texto CSV e converte para array de objetos
+ */
+function parseCSV(csvText) {
+    const lines = csvText.split('\n').filter(line => line.trim());
+    
+    if (lines.length === 0) return [];
+
+    // Primeira linha são os cabeçalhos
+    const headers = lines[0]
+        .split(';')
+        .map(header => header.trim().replace(/['"]/g, ''));
+
+    // Processa as linhas de dados
+    return lines.slice(1).map(line => {
+        const values = parseCSVRow(line, ';');
+        
+        // Cria objeto com chave-valor
+        const obj = {};
+        headers.forEach((header, index) => {
+            let value = values[index] || '';
+            
+            // Limpa formatação específica dos CSVs
+            value = value.replace(/^"""/, '').replace(/"""$/, '');
+            value = value.replace(/^\[/, '').replace(/\]$/, '').trim();
+            
+            obj[header] = value;
+        });
+        
+        return obj;
+    });
+}
+
+/**
+ * Processa uma linha CSV (trata valores entre aspas)
+ */
+function parseCSVRow(row, delimiter = ';') {
+    const values = [];
+    let current = '';
+    let inQuotes = false;
+    let i = 0;
+
+    while (i < row.length) {
+        const char = row[i];
+
+        if (char === '"' && (i === 0 || row[i - 1] !== '\\')) {
+            inQuotes = !inQuotes;
+        } else if (char === delimiter && !inQuotes) {
+            values.push(current.trim().replace(/^"|"$/g, ''));
+            current = '';
+        } else {
+            current += char;
+        }
+        
+        i++;
+    }
+
+    // Adiciona o último valor
+    values.push(current.trim().replace(/^"|"$/g, ''));
+
+    return values;
 }
 
 /**
@@ -137,9 +222,7 @@ function filterUnidades(searchTerm) {
         resultsContainer.innerHTML = filtered.map(unidade => `
             <div class="autocomplete-item" data-codigo="${unidade.CODIGO_CNES}">
                 <strong>${unidade.NOME_FANTASIA}</strong>
-                <div style="font-size: 12px; color: var(--text-tertiary);">
-                    CNES: ${unidade.CODIGO_CNES} • ${unidade.TIPO || ''}
-                </div>
+                <div>CNES: ${unidade.CODIGO_CNES} • ${unidade.TIPO || ''}</div>
             </div>
         `).join('');
         
@@ -154,7 +237,7 @@ function filterUnidades(searchTerm) {
         
     } else {
         resultsContainer.innerHTML = `
-            <div class="autocomplete-item" style="text-align: center; color: var(--text-tertiary);">
+            <div class="autocomplete-item" style="text-align: center; color: #757575; padding: 16px;">
                 Nenhuma unidade encontrada
             </div>
         `;
@@ -174,7 +257,7 @@ function selectUnidade(codigoCNES) {
         document.getElementById('autocompleteResults').style.display = 'none';
         
         // Foca no campo de senha
-        document.getElementById('senha').focus();
+        document.getElementById('password').focus();
     }
 }
 
@@ -182,7 +265,7 @@ function selectUnidade(codigoCNES) {
  * Configura validação do campo de senha
  */
 function setupPasswordValidation() {
-    const senhaInput = document.getElementById('senha');
+    const senhaInput = document.getElementById('password');
     
     // Formata CNES com zeros à esquerda
     senhaInput.addEventListener('input', (e) => {
@@ -202,11 +285,15 @@ function setupPasswordValidation() {
  * Configura o formulário de login
  */
 function setupLoginForm() {
-    const form = document.getElementById('loginForm');
+    const form = document.getElementById('formLogin');
     const loginBtn = document.getElementById('btnLogin');
+    const errorDiv = document.getElementById('loginError');
     
     form.addEventListener('submit', async (e) => {
         e.preventDefault();
+        
+        // Limpa erro anterior
+        errorDiv.classList.remove('show');
         
         // Valida formulário
         if (!validateForm()) {
@@ -216,7 +303,6 @@ function setupLoginForm() {
         // Desabilita botão durante o processamento
         loginBtn.disabled = true;
         loginBtn.classList.add('loading');
-        loginBtn.textContent = 'Verificando...';
         
         try {
             // Verifica login
@@ -232,14 +318,12 @@ function setupLoginForm() {
                 showError('Unidade ou CNES inválido. Verifique os dados e tente novamente.');
                 loginBtn.disabled = false;
                 loginBtn.classList.remove('loading');
-                loginBtn.textContent = 'ENTRAR';
             }
         } catch (error) {
             console.error('Erro ao verificar login:', error);
             showError('Erro ao processar login. Tente novamente.');
             loginBtn.disabled = false;
             loginBtn.classList.remove('loading');
-            loginBtn.textContent = 'ENTRAR';
         }
     });
 }
@@ -249,11 +333,8 @@ function setupLoginForm() {
  */
 function validateForm() {
     const unidadeInput = document.getElementById('unidade');
-    const senhaInput = document.getElementById('senha');
-    const errorMessage = document.getElementById('errorMessage');
-    
-    // Limpa mensagem de erro
-    errorMessage.style.display = 'none';
+    const senhaInput = document.getElementById('password');
+    const errorDiv = document.getElementById('loginError');
     
     // Verifica se unidade foi selecionada
     if (!selectedUnidade) {
@@ -283,7 +364,7 @@ function validateForm() {
  * Verifica as credenciais de login
  */
 async function verifyLogin() {
-    const senhaInput = document.getElementById('senha');
+    const senhaInput = document.getElementById('password');
     const senha = senhaInput.value.trim();
     
     // Verifica se CNES corresponde à unidade selecionada
@@ -298,26 +379,15 @@ async function verifyLogin() {
  * Exibe mensagem de erro
  */
 function showError(message) {
-    const errorMessage = document.getElementById('errorMessage');
-    errorMessage.textContent = message;
-    errorMessage.style.display = 'block';
-    
-    // Remove mensagem após 5 segundos
-    setTimeout(() => {
-        errorMessage.style.display = 'none';
-    }, 5000);
-}
-
-/**
- * Configura créditos do rodapé
- */
-function setupFooterCredits() {
-    const footer = document.getElementById('footer-credits');
-    if (footer) {
-        // Divide os créditos em duas linhas
-        footer.innerHTML = `
-            <p>${CONFIG.credits.replace(' | ', '<br>')}</p>
-        `;
+    const errorDiv = document.getElementById('loginError');
+    if (errorDiv) {
+        errorDiv.textContent = message;
+        errorDiv.classList.add('show');
+        
+        // Remove mensagem após 5 segundos
+        setTimeout(() => {
+            errorDiv.classList.remove('show');
+        }, 5000);
     }
 }
 
