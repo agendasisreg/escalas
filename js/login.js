@@ -1,55 +1,83 @@
 // js/login.js
 
 document.addEventListener("DOMContentLoaded", () => {
-    const unidadeSelect = document.getElementById("unidadeSelect");
+    const inputBusca = document.getElementById("unidadeBusca");
+    const listaSugestoes = document.getElementById("listaSugestoes");
+    const cnesHidden = document.getElementById("cnesSelecionado");
     const formLogin = document.getElementById("formLogin");
     const loginError = document.getElementById("loginError");
     
     let unidadesData = [];
 
-    // 1. Carregar unidades do arquivo JSON
+    // 1. Carregar unidades do arquivo JSON 
     fetch("data/unidades.json")
         .then(response => response.json())
         .then(data => {
-            unidadesData = Array.isArray(data) ? data : (data.unidades || []);
-            unidadeSelect.innerHTML = '<option value="" disabled selected>Selecione a unidade...</option>';
-            
-            unidadesData.forEach(unidade => {
-                const option = document.createElement("option");
-                option.value = unidade.NOME_FANTASIA;
-                option.textContent = unidade.NOME_FANTASIA;
-                unidadeSelect.appendChild(option);
-            });
+            unidadesData = Array.isArray(data) ? data : [];
         })
         .catch(err => {
             console.error("Erro ao carregar unidades:", err);
-            unidadeSelect.innerHTML = '<option value="">Erro ao carregar lista</option>';
+            loginError.textContent = "Erro técnico ao carregar dados das unidades.";
         });
 
-    // 2. Processar Login
+    // 2. Lógica de Busca em Tempo Real
+    inputBusca.addEventListener("input", (e) => {
+        const termo = e.target.value.toLowerCase();
+        listaSugestoes.innerHTML = "";
+        
+        if (termo.length < 2) {
+            listaSugestoes.style.display = "none";
+            return;
+        }
+
+        const filtrados = unidadesData.filter(u => 
+            (u.unidade && u.unidade.toLowerCase().includes(termo)) || 
+            (u.cnes && u.cnes.includes(termo))
+        ).slice(0, 6); // Limita a 6 resultados para manter o visual limpo
+
+        if (filtrados.length > 0) {
+            filtrados.forEach(u => {
+                const item = document.createElement("div");
+                item.textContent = u.unidade;
+                item.onclick = () => {
+                    inputBusca.value = u.unidade;
+                    cnesHidden.value = u.cnes;
+                    listaSugestoes.style.display = "none";
+                    loginError.textContent = "";
+                };
+                listaSugestoes.appendChild(item);
+            });
+            listaSugestoes.style.display = "block";
+        } else {
+            listaSugestoes.style.display = "none";
+        }
+    });
+
+    // Fechar lista ao clicar fora
+    document.addEventListener("click", (e) => {
+        if (e.target !== inputBusca) listaSugestoes.style.display = "none";
+    });
+
+    // 3. Processar Login [cite: 23, 24]
     formLogin.addEventListener("submit", (e) => {
         e.preventDefault();
-        const nomeUnidade = unidadeSelect.value;
+        const cnesAlvo = cnesHidden.value;
         const senhaDigitada = document.getElementById("password").value;
 
-        // Encontra o objeto da unidade selecionada
-        const unidadeEncontrada = unidadesData.find(u => u.NOME_FANTASIA === nomeUnidade);
+        if (!cnesAlvo) {
+            loginError.textContent = "Por favor, selecione uma unidade da lista.";
+            return;
+        }
 
-        if (unidadeEncontrada) {
-            // A senha é o CODIGO_CNES da unidade encontrada
-            if (senhaDigitada === unidadeEncontrada.CODIGO_CNES) {
-                localStorage.setItem("unidade_selecionada", nomeUnidade);
-                localStorage.setItem("cnes_selecionado", unidadeEncontrada.CODIGO_CNES);
-                
-                // Redireciona para o Dashboard
-                window.location.href = "dashboard.html";
-            } else {
-                loginError.textContent = "Senha incorreta para esta unidade.";
-                loginError.style.display = "block";
-            }
+        // Validação: Senha é o CNES [cite: 23]
+        if (senhaDigitada === cnesAlvo) {
+            localStorage.setItem("unidade_selecionada", inputBusca.value);
+            localStorage.setItem("cnes_logado", cnesAlvo);
+            localStorage.setItem("logado", "true");
+            
+            window.location.href = "dashboard.html"; // [cite: 24]
         } else {
-            loginError.textContent = "Selecione uma unidade válida.";
-            loginError.style.display = "block";
+            loginError.textContent = "Código CNES incorreto para esta unidade.";
         }
     });
 });
