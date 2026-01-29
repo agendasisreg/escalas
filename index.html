@@ -57,13 +57,23 @@
 
   <footer id="footerCreditos" class="app-footer app-footer--login"></footer>
 
+  <script src="config/config.js"></script> 
+  
   <script src="js/login.js"></script>
+
   <script>
-    // Script para carregar os créditos do rodapé
-    fetch("data/config.json").then(r => r.json()).then(d => {
-      document.getElementById("footerCreditos").innerHTML =
-        `© ${d.ano} - <strong>${d.sistema}</strong> | ${d.desenvolvedor}`;
-    }).catch(e => console.error("Erro ao carregar config.json:", e));
+    document.addEventListener("DOMContentLoaded", () => {
+      // Verifica se o CONFIG foi carregado corretamente
+      if (typeof CONFIG !== 'undefined') {
+        const footer = document.getElementById("footerCreditos");
+        if (footer) {
+          footer.innerHTML = `© ${CONFIG.ANO} - <strong>${CONFIG.SISTEMA}</strong> | ${CONFIG.DESENVOLVEDOR}`;
+        }
+      } else {
+        console.error("Erro: O arquivo config/config.js não foi carregado.");
+      }
+    });
   </script>
 </body>
 </html>
+
