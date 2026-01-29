@@ -1,9 +1,8 @@
 // js/dashboard.js
 
 document.addEventListener("DOMContentLoaded", () => {
-    // 1. Verificação de Segurança e Cache
     const logado = localStorage.getItem("logado");
-    const UNIDADE = localStorage.getItem("unidade_selecionada") || "Não identificada";
+    const UNIDADE = localStorage.getItem("unidade_selecionada");
     const CNES = localStorage.getItem("cnes_logado");
     const URL_API = "https://script.google.com/macros/s/AKfycbzrzuSOFKgHFbLpjKOpGqzK7gAAIK3ucbDYgsTvDi1RoFcClepilJwRtF0GTFteOFjfBQ/exec";
 
@@ -12,89 +11,95 @@ document.addEventListener("DOMContentLoaded", () => {
         return;
     }
 
-    // Atualiza o nome da unidade no cabeçalho
     document.getElementById("txtUnidade").textContent = UNIDADE;
 
-    // 2. Renderizar Componentes Compartilhados
+    // Componentes e Rodapé
     if (typeof carregarHeader === "function") carregarHeader();
     if (typeof carregarNavbar === "function") carregarNavbar();
-    
-    // 3. Preencher Rodapé via CONFIG
-    const footer = document.getElementById("footerCreditos");
-    if (footer && typeof CONFIG !== 'undefined') {
-        footer.innerHTML = `© ${CONFIG.ANO} - <strong>${CONFIG.SISTEMA}</strong> | ${CONFIG.DESENVOLVEDOR}`;
+    const f = document.getElementById("footerCreditos");
+    if (f && typeof CONFIG !== 'undefined') {
+        f.innerHTML = `<p>© ${CONFIG.ANO} - <strong>${CONFIG.SISTEMA}</strong> | ${CONFIG.DESENVOLVEDOR}</p>`;
     }
 
-    // 4. Inicialização de Gráficos (Lógica Restaurada)
-    const ctxVagas = document.getElementById('chartVagas').getContext('2d');
-    const ctxProf = document.getElementById('chartProfissionais').getContext('2d');
-
-    // Estilos de Cores baseados nas variáveis CSS
-    const cores = {
-        azul: '#1a2a6c',
-        verde: '#2ecc71',
-        amarelo: '#f1c40f',
-        vermelho: '#b21f1f'
+    // Controle da Tabela
+    document.getElementById("btnToggleTabela").onclick = function() {
+        const secao = document.getElementById("secaoTabela");
+        const visivel = secao.style.display === "block";
+        secao.style.display = visivel ? "none" : "block";
+        this.textContent = visivel ? "📋 Ver Tabela de Dados" : "📋 Ocultar Tabela";
     };
 
-    // Gráfico de Pizza: Distribuição de Vagas
-    const chartVagas = new Chart(ctxVagas, {
-        type: 'doughnut',
-        data: {
-            labels: ['Ocupadas', 'Disponíveis', 'Bloqueadas'],
-            datasets: [{
-                data: [65, 25, 10],
-                backgroundColor: [cores.azul, cores.verde, cores.amarelo],
-                borderWidth: 0
-            }]
-        },
-        options: { responsive: true, maintainAspectRatio: false }
-    });
+    // --- FUNÇÃO DE RENDERIZAÇÃO DE DADOS (KPIs, Insights e Gráficos) ---
+    function processarDadosDashboard(dados) {
+        if (!dados || dados.length === 0) return;
 
-    // Gráfico de Barras: Produtividade
-    const chartProf = new Chart(ctxProf, {
-        type: 'bar',
-        data: {
-            labels: ['Seg', 'Ter', 'Qua', 'Qui', 'Sex'],
-            datasets: [{
-                label: 'Vagas Ofertadas',
-                data: [120, 150, 180, 90, 210],
-                backgroundColor: cores.azul,
-                borderRadius: 5
-            }]
-        },
-        options: { responsive: true, maintainAspectRatio: false }
-    });
+        // 1. KPIs
+        const totalVagas = dados.reduce((sum, item) => sum + (parseInt(item.vagas) || 0), 0);
+        document.getElementById("totalVagas").textContent = totalVagas;
 
-    // 5. Lógica de Sincronização Real
+        // 2. Insights
+        // Exemplo: Encontrar o procedimento com mais vagas
+        const maiorOferta = dados.reduce((prev, current) => (parseInt(prev.vagas) > parseInt(current.vagas)) ? prev : current);
+        document.getElementById("insightMaiorOferta").textContent = `${maiorOferta.procedimento} (${maiorOferta.vagas})`;
+        
+        document.getElementById("insightMedia").textContent = (totalVagas / dados.length).toFixed(1);
+        document.getElementById("insightDiaCritico").textContent = "Segunda-feira"; // Exemplo estático ou lógica de data
+
+        // 3. Tabela
+        const corpo = document.getElementById("corpoTabela");
+        corpo.innerHTML = dados.map(item => `
+            <tr style="border-bottom: 1px solid #eee;">
+                <td style="padding: 10px;">${item.profissional}</td>
+                <td style="padding: 10px;">${item.procedimento}</td>
+                <td style="padding: 10px;">${item.vagas}</td>
+                <td style="padding: 10px;">${item.vigencia_inicio}</td>
+            </tr>
+        `).join('');
+
+        // 4. Gráficos (Exemplo simples com Chart.js)
+        renderizarGraficos(dados);
+    }
+
+    function renderizarGraficos(dados) {
+        const ctxVagas = document.getElementById('chartVagas').getContext('2d');
+        new Chart(ctxVagas, {
+            type: 'doughnut',
+            data: {
+                labels: ['Ofertadas', 'Restantes'],
+                datasets: [{
+                    data: [80, 20],
+                    backgroundColor: ['#1a2a6c', '#2ecc71']
+                }]
+            },
+            options: { responsive: true, maintainAspectRatio: false }
+        });
+    }
+
+    // Botão Sincronizar (Lógica Real do teu Sheets)
     document.getElementById("btnSincronizar").onclick = async function() {
         this.innerHTML = "⌛ Sincronizando...";
         this.disabled = true;
-
         try {
             const resp = await fetch(`${URL_API}?unidade=${encodeURIComponent(UNIDADE)}&t=${Date.now()}`);
             const res = await resp.json();
-
             if (res.status === "OK") {
-                // Aqui você pode atualizar os gráficos com dados reais do Sheets
-                document.getElementById("totalVagas").textContent = res.dados.length;
-                alert("Sincronização realizada com sucesso!");
+                processarDadosDashboard(res.dados);
+                alert("Dados atualizados com sucesso!");
             }
         } catch (e) {
-            console.error("Erro na sincronização:", e);
-            alert("Erro de conexão com o Google Sheets.");
+            alert("Erro ao conectar com o Google Sheets.");
         } finally {
-            this.innerHTML = "🔄 Sincronizar Sheets";
+            this.innerHTML = "🔄 Sincronizar";
             this.disabled = false;
         }
     };
 
-    // 6. Carregar Contadores Iniciais dos JSONs Locais
+    // Carregar Contadores Iniciais (JSON Locais)
     Promise.all([
         fetch("data/profissionais.json").then(r => r.json()).catch(() => []),
         fetch("data/procedimentos.json").then(r => r.json()).catch(() => [])
-    ]).then(([profissionais, procedimentos]) => {
-        document.getElementById("totalProfissionais").textContent = profissionais.length;
-        document.getElementById("totalProcedimentos").textContent = procedimentos.length;
+    ]).then(([prof, proc]) => {
+        document.getElementById("totalProfissionais").textContent = prof.length;
+        document.getElementById("totalProcedimentos").textContent = proc.length;
     });
 });
