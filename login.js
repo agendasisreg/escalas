@@ -50,8 +50,7 @@ function setupFooterCredits() {
 async function carregarUnidades() {
     try {
         // ✅ CORREÇÃO: Usando a função correta
-        const csvData = await loadData('/data/unidades.csv');
-        unidades = csvData.unidades; // ✅ Acesso correto aos dados
+        const { unidades } = await loadData('/data/unidades.csv'); // ✅ Acesso correto aos dados
         console.log(`✓ Carregadas ${unidades.length} unidades`);
         
         // Ordena unidades alfabeticamente
@@ -326,4 +325,5 @@ function showError(message) {
 
 // Inicializa a página quando carregada
 document.addEventListener('DOMContentLoaded', initLogin);
+
 
