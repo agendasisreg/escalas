@@ -12,70 +12,9 @@
 </head>
 
 <body>
-  <main class="login-container">
-
-    <section class="login-brand">
-      <div class="login-brand__icon">
-        <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
-          <line x1="16" y1="2" x2="16" y2="6"></line>
-          <line x1="8" y1="2" x2="8" y2="6"></line>
-          <line x1="3" y1="10" x2="21" y2="10"></line>
-        </svg>
-      </div>
-
-      <div class="login-brand__text">
-        <h1>AGENDA SISREG</h1>
-        <p>Complexo Regulador do Amazonas</p>
-      </div>
-    </section>
-
-    <section class="login-card">
-      <h2>Acesso Restrito</h2>
-      <p class="login-card__subtitle">Selecione sua unidade executante para prosseguir.</p>
-
-	<form id="formLogin">
-	  <div class="form-group" style="position: relative;">
-	    <label for="unidadeBusca">Unidade de Saúde</label>
-	    <input type="text" id="unidadeBusca" class="form-control" placeholder="Digite o nome da unidade..." autocomplete="off" required />
-	    
-	    <div id="listaSugestoes" class="search-suggestions" style="display: none; position: absolute; width: 100%; background: white; border: 1px solid var(--color-border); border-radius: 8px; z-index: 100; max-height: 200px; overflow-y: auto; box-shadow: var(--am-shadow);"></div>
-	    
-	    <input type="hidden" id="cnesSelecionado" value="" />
-	  </div>
-	
-	  <div class="form-group">
-	    <label for="password">Senha (CNES ou código da Unidade)</label>
-	    <input type="password" id="password" class="form-control" placeholder="Digite o código" required />
-	  </div>
-	
-	  <button type="submit" class="btn btn-primary">Entrar no Sistema</button>
-	  <div id="loginError" class="form-error" aria-live="polite" style="margin-top: 10px; color: var(--color-accent-red); font-weight: bold; text-align: center;"></div>
-	</form>
-    </section>
-
-  </main>
-
-  <footer id="footerCreditos" class="app-footer app-footer--login"></footer>
-
-  <script src="config/config.js"></script> 
-  
-  <script src="js/login.js"></script>
-
-  <script>
-    document.addEventListener("DOMContentLoaded", () => {
-      // Verifica se o CONFIG foi carregado corretamente
-      if (typeof CONFIG !== 'undefined') {
-        const footer = document.getElementById("footerCreditos");
-        if (footer) {
-          footer.innerHTML = `© ${CONFIG.ANO} - <strong>${CONFIG.SISTEMA}</strong> | ${CONFIG.DESENVOLVEDOR}`;
-        }
-      } else {
-        console.error("Erro: O arquivo config/config.js não foi carregado.");
-      }
-    });
-  </script>
+Página em construção... ⏳
 </body>
 </html>
+
 
 
