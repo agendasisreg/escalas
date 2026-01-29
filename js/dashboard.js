@@ -1,29 +1,32 @@
 // js/dashboard.js
 // Versão refatorada com configuração centralizada
+// ============================================================
+
 document.addEventListener("DOMContentLoaded", async () => {
-  // Carregar configurações
+  
+  // ==================== INICIALIZAÇÃO ====================
+  
+  // Carregar créditos
   await SisregUtils.preencherCreditos("footerCreditos");
   
-  // =====================
-  // CONFIGURAÇÕES LOCAIS
-  // =====================
+  // Obter unidade atual
   const UNIDADE = SisregUtils.getUnidade();
   const CACHE_KEY = SisregUtils.getCacheKey(UNIDADE);
   
-  // Preencher nome da unidade
+  // Preencher nome da unidade na tela
   const txtUnidadeEl = document.getElementById("txtUnidade");
   if (txtUnidadeEl) txtUnidadeEl.textContent = UNIDADE;
   
-  // =====================
-  // VARIÁVEIS
-  // =====================
-  let charts = {};
+  // ==================== VARIÁVEIS ====================
   
-  // =====================
-  // FUNÇÕES PRINCIPAIS
-  // =====================
+  let charts = {}; // Armazena instâncias dos gráficos
   
-  // Atualizar KPIs
+  // ==================== FUNÇÕES PRINCIPAIS ====================
+  
+  /**
+   * Atualiza os cards KPI com base nos dados
+   * @param {Array} dadosFiltrados - Dados filtrados
+   */
   function atualizarCards(dadosFiltrados) {
     const kpiVagas = document.getElementById("kpiVagas");
     const kpiProfs = document.getElementById("kpiProfissionais");
@@ -77,14 +80,17 @@ document.addEventListener("DOMContentLoaded", async () => {
     }
     
     // Atualizar UI
-    if (kpiVagas) kpiVagas.textContent = totalVagas.toLocaleString('pt-BR');
+    if (kpiVagas) kpiVagas.textContent = SisregUtils.formatarNumero(totalVagas);
     if (kpiProfs) kpiProfs.textContent = nProfs;
     if (kpiProcedimentos) kpiProcedimentos.textContent = nProcs;
     if (kpiLider) kpiLider.textContent = liderNome;
     if (kpiRetorno) kpiRetorno.textContent = `${percRetorno}%`;
   }
   
-  // Renderizar tabela
+  /**
+   * Renderiza dados na tabela
+   * @param {Array} dadosRaw - Dados brutos
+   */
   function renderizarDados(dadosRaw) {
     const tbody = document.getElementById("corpoTabela");
     if (!tbody) return;
@@ -92,7 +98,13 @@ document.addEventListener("DOMContentLoaded", async () => {
     const dados = SisregUtils.normalizarLista(dadosRaw);
     
     if (!dados || dados.length === 0) {
-      tbody.innerHTML = `<tr><td colspan='11' style='text-align:center; padding: 20px;'>${SISREG_CONFIG.MESSAGES.noData}</td></tr>`;
+      tbody.innerHTML = `
+        <tr>
+          <td colspan='11' style='text-align:center; padding: 40px 20px; color: ${SISREG_CONFIG.CORES.GRAY}; font-size: 1.1rem;'>
+            ${SISREG_CONFIG.MENSAGENS.NENHUM_DADO}
+          </td>
+        </tr>
+      `;
       return;
     }
     
@@ -119,11 +131,42 @@ document.addEventListener("DOMContentLoaded", async () => {
     filtrarTabela();
   }
   
+  /**
+   * Filtra tabela por mês
+   */
+  function filtrarTabela() {
+    const mesSelecionado = document.getElementById("filtroMes").value;
+    const linhas = document.querySelectorAll("#corpoTabela tr");
+    let dadosParaKPI = [];
+    
+    // Recuperar dados do cache para recalcular os cards
+    const cache = SisregUtils.normalizarLista(
+      SisregUtils.carregarLocalStorage(CACHE_KEY, [])
+    );
+    
+    linhas.forEach((linha, index) => {
+      const dataVigencia = linha.getAttribute("data-mes");
+      if (mesSelecionado === "todos" || dataVigencia === mesSelecionado) {
+        linha.style.display = "";
+        if (cache[index]) dadosParaKPI.push(cache[index]);
+      } else {
+        linha.style.display = "none";
+      }
+    });
+    
+    // Atualizar KPIs com dados filtrados
+    atualizarCards(dadosParaKPI);
+  }
+  
+  // ==================== EVENTOS ====================
+  
+  // Filtro de mês
+  document.getElementById("filtroMes")?.addEventListener("change", filtrarTabela);
+  
   // Sincronizar com API
   document.getElementById("btnSincronizar").onclick = async function() {
     const btn = this;
-    btn.innerHTML = `<span style="display:inline-flex;align-items:center;gap:6px;"><svg width="16" height="16" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" stroke="#fff" stroke-width="2" fill="none"><animate attributeName="stroke-dasharray" values="0,63 63,0" dur="1.5s" repeatCount="indefinite"/></circle></svg>Sincronizando...</span>`;
-    btn.disabled = true;
+    SisregUtils.showLoading(btn, "Sincronizando...");
     
     try {
       const resp = await fetch(`${SISREG_CONFIG.API_URL}?unidade=${encodeURIComponent(UNIDADE)}&t=${Date.now()}`);
@@ -131,31 +174,78 @@ document.addEventListener("DOMContentLoaded", async () => {
       
       if (res.status === "OK") {
         const dadosNorm = SisregUtils.normalizarLista(res.dados);
-        localStorage.setItem(CACHE_KEY, JSON.stringify(dadosNorm));
+        SisregUtils.salvarLocalStorage(CACHE_KEY, dadosNorm);
         renderizarDados(dadosNorm);
-        alert("✅ " + SISREG_CONFIG.MESSAGES.syncSuccess);
+        SisregUtils.showToast(SISREG_CONFIG.MENSAGENS.SINCRONIZADO, "success");
       } else {
-        alert("⚠️ Sheets respondeu, mas sem dados para esta unidade.");
+        SisregUtils.showToast(SISREG_CONFIG.MENSAGENS.ERRO_SHEETS, "warning");
       }
     } catch (e) {
-      alert("❌ " + SISREG_CONFIG.MESSAGES.syncError);
+      SisregUtils.showToast(SISREG_CONFIG.MENSAGENS.ERRO_CONEXAO, "error");
     } finally {
-      btn.innerHTML = "🔄 Sincronizar Sheets";
-      btn.disabled = false;
+      SisregUtils.hideLoading(btn);
     }
   };
   
   // Logout
   document.getElementById("btnLogout").onclick = () => {
-    window.location.href = "index.html";
+    window.location.href = SISREG_CONFIG.PAGINAS.INDEX;
   };
   
-  // =====================
-  // INICIALIZAÇÃO
-  // =====================
-  const dadosSalvos = localStorage.getItem(CACHE_KEY);
-  if (dadosSalvos) {
-    const dados = JSON.parse(dadosSalvos);
-    renderizarDados(dados);
+  // Toggle tabela
+  document.getElementById("btnToggleTabela").onclick = () => {
+    const sec = document.getElementById("secTabela");
+    const aberto = sec.style.display === "block";
+    sec.style.display = aberto ? "none" : "block";
+    document.getElementById("btnToggleTabela").textContent = 
+      aberto ? "📋 Ver Tabela" : "📋 Ocultar Tabela";
+  };
+  
+  // Exportar PDF
+  document.getElementById("btnExportarPDF").onclick = async () => {
+    const area = document.getElementById("dashboardArea");
+    if (!area) return;
+    
+    SisregUtils.showToast("📝 Gerando PDF...", "info");
+    
+    // Aguarda um frame para melhor captura
+    await new Promise(r => requestAnimationFrame(r));
+    
+    try {
+      const canvas = await html2canvas(area, { 
+        scale: 2, 
+        useCORS: true,
+        logging: false
+      });
+      
+      const img = canvas.toDataURL("image/png");
+      const { jsPDF } = window.jspdf;
+      const pdf = new jsPDF("p", "mm", "a4");
+      const pageW = 210;
+      const imgW = pageW;
+      const imgH = (canvas.height * imgW) / canvas.width;
+      
+      pdf.addImage(img, "PNG", 0, 10, imgW, imgH);
+      
+      const unidade = (document.getElementById("txtUnidade")?.textContent || "UNIDADE").trim();
+      pdf.save(`Dashboard_${unidade}.pdf`);
+      
+      SisregUtils.showToast("✅ PDF exportado com sucesso!", "success");
+    } catch (error) {
+      console.error("Erro ao exportar PDF:", error);
+      SisregUtils.showToast("❌ Erro ao gerar PDF", "error");
+    }
+  };
+  
+  // ==================== INICIALIZAÇÃO ====================
+  
+  // Carregar dados do cache
+  const dadosSalvos = SisregUtils.carregarLocalStorage(CACHE_KEY);
+  if (dadosSalvos && dadosSalvos.length > 0) {
+    renderizarDados(dadosSalvos);
+  } else {
+    // Se não houver cache, tentar sincronizar
+    SisregUtils.showToast("ℹ️ Nenhum dado em cache. Clique em 'Sincronizar' para carregar.", "info");
   }
+  
 });
