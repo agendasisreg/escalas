@@ -1,26 +1,609 @@
+/* css/style.css - Estilos modernos e profissionais */
+:root {
+  /* Cores principais */
+  --am-blue: #1a2a6c;
+  --am-green: #4CAF50;
+  --am-yellow: #fdbb2d;
+  --am-red: #b21f1f;
+  --am-gray: #9aa0a6;
+  --am-light: #f4f7f6;
+  --am-dark: #1f2937;
+  
+  /* Cores de fundo */
+  --bg-primary: #ffffff;
+  --bg-secondary: #f9fafb;
+  --bg-tertiary: #f3f4f6;
+  
+  /* Sombras */
+  --shadow-sm: 0 2px 8px rgba(0,0,0,0.08);
+  --shadow-md: 0 4px 12px rgba(0,0,0,0.10);
+  --shadow-lg: 0 10px 24px rgba(0,0,0,0.12);
+  --shadow-xl: 0 16px 32px rgba(0,0,0,0.15);
+  
+  /* Bordas */
+  --border-radius-sm: 8px;
+  --border-radius-md: 12px;
+  --border-radius-lg: 16px;
+  --border-radius-xl: 20px;
+  
+  /* Transições */
+  --transition-fast: 0.2s ease;
+  --transition-normal: 0.3s ease;
+  --transition-slow: 0.4s ease;
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
 body {
-  font-family: Arial, sans-serif;
-  max-width: 700px;
-  margin: auto;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  background: var(--am-light);
+  color: var(--am-dark);
+  line-height: 1.6;
 }
 
-label {
-  display: block;
-  margin-top: 12px;
+/* ========================================
+HEADER - Design moderno com gradient
+======================================== */
+.dash-header {
+  background: linear-gradient(135deg, var(--am-blue) 0%, #0d1b44 100%);
+  padding: 16px 24px;
+  box-shadow: var(--shadow-lg);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+  border-bottom: 4px solid var(--am-red);
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  backdrop-filter: blur(10px);
 }
 
-select, input {
+.unit-info h1 {
+  font-size: 1.3rem;
+  color: #ffffff;
+  margin: 0;
+  font-weight: 800;
+  letter-spacing: 0.3px;
+  text-shadow: 0 2px 4px rgba(0,0,0,0.2);
+}
+
+.unit-info p {
+  margin: 4px 0 0 0;
+  color: rgba(255,255,255,0.85);
+  font-size: 0.88rem;
+  font-weight: 500;
+  letter-spacing: 0.2px;
+}
+
+.header-btns {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+/* ========================================
+BOTÕES - Design moderno com efeitos
+======================================== */
+.btn-main {
+  padding: 12px 20px;
+  border-radius: var(--border-radius-md);
+  border: none;
+  cursor: pointer;
+  font-weight: 700;
+  font-size: 0.92rem;
+  transition: var(--transition-normal);
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  text-decoration: none;
+  line-height: 1;
+  white-space: nowrap;
+  position: relative;
+  overflow: hidden;
+}
+
+.btn-main::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
   width: 100%;
-  padding: 6px;
+  height: 100%;
+  background: linear-gradient(135deg, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0) 100%);
+  opacity: 0;
+  transition: var(--transition-fast);
 }
 
-button {
-  margin-top: 20px;
-  padding: 10px;
+.btn-main:hover::before {
+  opacity: 1;
 }
 
-.aviso {
-  color: red;
-  font-size: 0.9em;
+.btn-main:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(0,0,0,0.15);
 }
 
+.btn-main:active {
+  transform: translateY(0);
+}
+
+.btn-back {
+  background: rgba(255,255,255,0.15);
+  color: #ffffff;
+}
+
+.btn-back:hover {
+  background: rgba(255,255,255,0.25);
+}
+
+.btn-logout {
+  background: #ffffff;
+  color: var(--am-red);
+  box-shadow: var(--shadow-md);
+}
+
+.btn-logout:hover {
+  background: #ffffff;
+  box-shadow: var(--shadow-lg);
+}
+
+.btn-sync {
+  background: linear-gradient(135deg, var(--am-blue) 0%, #0d1b44 100%);
+  color: #ffffff;
+}
+
+.btn-sync:hover {
+  background: linear-gradient(135deg, #0d1b44 0%, var(--am-blue) 100%);
+}
+
+.btn-new {
+  background: linear-gradient(135deg, var(--am-green) 0%, #3d8b40 100%);
+  color: #ffffff;
+}
+
+.btn-new:hover {
+  background: linear-gradient(135deg, #3d8b40 0%, var(--am-green) 100%);
+}
+
+/* ========================================
+CONTAINER - Layout centralizado
+======================================== */
+.container,
+.page {
+  width: min(1400px, calc(100% - 40px));
+  margin: 20px auto 0 auto;
+  max-width: 100%;
+}
+
+/* ========================================
+CARDS - Design moderno com sombras
+======================================== */
+.card {
+  background: var(--bg-primary);
+  border-radius: var(--border-radius-lg);
+  padding: 24px;
+  box-shadow: var(--shadow-lg);
+  border: 1px solid rgba(0,0,0,0.06);
+  margin-bottom: 20px;
+  transition: var(--transition-normal);
+  position: relative;
+  overflow: hidden;
+}
+
+.card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 4px;
+  height: 100%;
+  background: linear-gradient(to bottom, var(--am-blue), var(--am-green));
+  opacity: 0;
+  transition: var(--transition-normal);
+}
+
+.card:hover::before {
+  opacity: 1;
+}
+
+.card:hover {
+  box-shadow: var(--shadow-xl);
+  transform: translateY(-2px);
+}
+
+.card h2,
+.card h3 {
+  margin: 0 0 16px 0;
+  font-size: 1.15rem;
+  color: var(--am-blue);
+  font-weight: 800;
+  letter-spacing: 0.3px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  position: relative;
+  padding-bottom: 8px;
+}
+
+.card h2::before,
+.card h3::before {
+  content: "";
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--am-yellow);
+  box-shadow: 0 0 0 4px rgba(253,187,45,0.2);
+  display: inline-block;
+}
+
+.card h2::after,
+.card h3::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 50px;
+  height: 3px;
+  background: linear-gradient(to right, var(--am-blue), var(--am-green));
+  border-radius: 3px;
+}
+
+.subtext {
+  margin: -8px 0 20px 0;
+  color: var(--am-gray);
+  font-weight: 600;
+  font-size: 0.92rem;
+  line-height: 1.5;
+}
+
+/* ========================================
+KPI CARDS - Design elegante
+======================================== */
+.kpi-container {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.kpi-card {
+  background: linear-gradient(135deg, var(--bg-primary) 0%, #f8f9fa 100%);
+  border-radius: var(--border-radius-lg);
+  padding: 24px;
+  text-align: center;
+  box-shadow: var(--shadow-md);
+  border-left: 4px solid var(--am-blue);
+  transition: var(--transition-normal);
+  position: relative;
+  overflow: hidden;
+}
+
+.kpi-card::before {
+  content: '';
+  position: absolute;
+  top: -50%;
+  right: -50%;
+  width: 200%;
+  height: 200%;
+  background: radial-gradient(circle, rgba(26,42,108,0.05) 0%, transparent 70%);
+  z-index: 0;
+}
+
+.kpi-card:hover {
+  transform: translateY(-4px);
+  box-shadow: var(--shadow-xl);
+}
+
+.kpi-card h3 {
+  margin: 0 0 12px 0;
+  font-size: 0.95rem;
+  color: var(--am-gray);
+  font-weight: 600;
+  letter-spacing: 0.5px;
+}
+
+.kpi-card p {
+  margin: 0;
+  font-size: 1.8rem;
+  font-weight: 800;
+  color: var(--am-blue);
+  line-height: 1;
+}
+
+/* ========================================
+FORMULÁRIOS - Design clean
+======================================== */
+#formEscala {
+  display: grid;
+  grid-template-columns: repeat(12, 1fr);
+  gap: 16px;
+}
+
+.campo {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  position: relative;
+  grid-column: span 4;
+  min-width: 0;
+}
+
+.campo.w6 { grid-column: span 6; }
+.campo.w12 { grid-column: 1 / -1; }
+
+.campo label {
+  font-size: 0.88rem;
+  font-weight: 700;
+  color: var(--am-blue);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.campo label::before {
+  content: '•';
+  color: var(--am-yellow);
+  font-weight: 900;
+}
+
+.campo input,
+.campo select {
+  width: 100%;
+  padding: 14px 16px;
+  border: 2px solid rgba(0,0,0,0.08);
+  border-radius: var(--border-radius-md);
+  outline: none;
+  font-family: inherit;
+  transition: var(--transition-fast);
+  background: var(--bg-primary);
+  font-weight: 600;
+  font-size: 0.95rem;
+}
+
+.campo input:focus,
+.campo select:focus {
+  border-color: var(--am-blue);
+  box-shadow: 0 0 0 4px rgba(26,42,108,0.12);
+  background: var(--bg-secondary);
+}
+
+.campo input:disabled {
+  background: var(--bg-tertiary);
+  color: var(--am-gray);
+  cursor: not-allowed;
+}
+
+/* ========================================
+AUTOCOMPLETE - Design moderno
+======================================== */
+.autocomplete {
+  position: absolute;
+  top: calc(100% + 8px);
+  left: 0;
+  right: 0;
+  background: var(--bg-primary);
+  border: 1px solid rgba(0,0,0,0.12);
+  border-radius: var(--border-radius-md);
+  box-shadow: var(--shadow-lg);
+  max-height: 300px;
+  overflow-y: auto;
+  z-index: 1000;
+  display: none;
+  animation: slideDown 0.2s ease;
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.autocomplete div {
+  padding: 12px 16px;
+  cursor: pointer;
+  font-weight: 600;
+  color: var(--am-dark);
+  border-bottom: 1px solid rgba(0,0,0,0.06);
+  transition: var(--transition-fast);
+}
+
+.autocomplete div:last-child {
+  border-bottom: none;
+}
+
+.autocomplete div:hover {
+  background: rgba(26,42,108,0.06);
+  color: var(--am-blue);
+  padding-left: 20px;
+}
+
+/* ========================================
+BOTÕES DE AÇÃO - Design destacado
+======================================== */
+.btn-acao,
+#btnExportarCSV {
+  background: linear-gradient(135deg, var(--am-blue) 0%, #0d1b44 100%);
+  color: #ffffff;
+  border: none;
+  padding: 16px 24px;
+  border-radius: var(--border-radius-md);
+  font-weight: 800;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: var(--transition-normal);
+  width: 100%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  position: relative;
+  overflow: hidden;
+}
+
+.btn-acao::before,
+#btnExportarCSV::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+  transition: var(--transition-slow);
+}
+
+.btn-acao:hover::before,
+#btnExportarCSV:hover::before {
+  left: 100%;
+}
+
+.btn-acao:hover,
+#btnExportarCSV:hover {
+  background: linear-gradient(135deg, var(--am-green) 0%, #3d8b40 100%);
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-xl);
+}
+
+/* ========================================
+TABELAS - Design profissional
+======================================== */
+.table-wrapper {
+  overflow-x: auto;
+  border-radius: var(--border-radius-lg);
+  border: 1px solid rgba(0,0,0,0.08);
+  box-shadow: var(--shadow-md);
+  margin-top: 16px;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  min-width: 1000px;
+  font-size: 0.92rem;
+}
+
+thead th {
+  position: sticky;
+  top: 0;
+  background: linear-gradient(135deg, var(--am-blue) 0%, #0d1b44 100%);
+  color: #ffffff;
+  text-align: left;
+  padding: 14px 16px;
+  font-size: 0.82rem;
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+  font-weight: 800;
+  z-index: 10;
+  border-bottom: 3px solid var(--am-red);
+}
+
+tbody td {
+  padding: 14px 16px;
+  border-bottom: 1px solid rgba(0,0,0,0.06);
+  font-weight: 600;
+  color: var(--am-dark);
+  transition: var(--transition-fast);
+}
+
+tbody tr {
+  transition: var(--transition-fast);
+}
+
+tbody tr:hover {
+  background: rgba(26,42,108,0.04);
+}
+
+tbody tr:hover td {
+  color: var(--am-blue);
+}
+
+tbody tr:last-child td {
+  border-bottom: none;
+}
+
+/* ========================================
+FOOTER - Design clean
+======================================== */
+footer {
+  width: min(1400px, calc(100% - 40px));
+  margin: 24px auto 24px auto;
+  background: transparent;
+  border-top: 1px solid rgba(0,0,0,0.06);
+  padding: 16px 0;
+  color: var(--am-gray);
+  font-weight: 600;
+  text-align: center;
+  font-size: 0.92rem;
+}
+
+footer strong {
+  color: var(--am-blue);
+}
+
+/* ========================================
+RESPONSIVO
+======================================== */
+@media (max-width: 1024px) {
+  #formEscala {
+    grid-template-columns: repeat(6, 1fr);
+  }
+  .campo { grid-column: span 6; }
+  .campo.w6 { grid-column: span 6; }
+  .campo.w12 { grid-column: 1 / -1; }
+}
+
+@media (max-width: 768px) {
+  .dash-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 16px;
+    padding: 16px;
+  }
+  
+  .header-btns {
+    width: 100%;
+    flex-wrap: wrap;
+  }
+  
+  .btn-main {
+    flex: 1;
+    min-width: 140px;
+    justify-content: center;
+  }
+  
+  .container,
+  .page {
+    width: calc(100% - 24px);
+  }
+  
+  .kpi-container {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 480px) {
+  .kpi-container {
+    grid-template-columns: 1fr;
+  }
+  
+  .card {
+    padding: 20px;
+  }
+  
+  .campo input {
+    padding: 12px;
+    font-size: 0.9rem;
+  }
+}
