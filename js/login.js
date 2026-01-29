@@ -29,34 +29,44 @@ document.addEventListener("DOMContentLoaded", async () => {
   
   // ==================== CARREGAMENTO DE UNIDADES ====================
   
-  try {
-    unidadesData = await SisregUtils.carregarDadosJson(SISREG_CONFIG.ARQUIVOS.UNIDADES);
+  // Adicione esta nova seção de autocomplete para unidades
+  const unidadeInput = document.getElementById("unidadeInput");
+  const listaUnidades = document.getElementById("listaUnidades");
+  
+  // Autocomplete para unidade
+  unidadeInput.addEventListener("input", () => {
+    listaUnidades.innerHTML = "";
+    const termo = unidadeInput.value.toLowerCase();
     
-    if (!Array.isArray(unidadesData)) {
-      unidadesData = unidadesData.unidades || [];
+    if (termo.length < 2) { 
+      listaUnidades.style.display = "none"; 
+      return; 
     }
     
-    if (unidadeSelect) {
-      unidadeSelect.innerHTML = '<option value="" disabled selected>🏥 Selecione a unidade...</option>';
-      
-      // Ordenar unidades por nome
-      unidadesData
-        .sort((a, b) => (a.NOME_FANTASIA || '').localeCompare(b.NOME_FANTASIA || ''))
-        .forEach(unidade => {
-          const option = document.createElement("option");
-          option.value = unidade.NOME_FANTASIA;
-          option.textContent = unidade.NOME_FANTASIA;
-          option.setAttribute("data-cnes", unidade.CODIGO_CNES || "");
-          unidadeSelect.appendChild(option);
-        });
-    }
-  } catch (err) {
-    console.error("Erro ao carregar unidades:", err);
-    if (unidadeSelect) {
-      unidadeSelect.innerHTML = '<option value="">❌ Erro ao carregar lista</option>';
-    }
-    SisregUtils.showToast(SISREG_CONFIG.MENSAGENS.ERRO_CONEXAO, "error");
-  }
+    // Filtra unidades pelo nome
+    unidadesData
+      .filter(u => u.NOME_FANTASIA.toLowerCase().includes(termo))
+      .slice(0, 10)
+      .forEach(unidade => {
+        const div = document.createElement("div");
+        div.textContent = `${unidade.NOME_FANTASIA} (${unidade.CODIGO_CNES})`;
+        div.onclick = () => {
+          unidadeInput.value = unidade.NOME_FANTASIA;
+          unidadeSelecionada = unidade;
+          listaUnidades.style.display = "none";
+        };
+        listaUnidades.appendChild(div);
+      });
+    
+    listaUnidades.style.display = "block";
+  });
+  
+  // Adicione esta função para selecionar a unidade ao clicar na sugestão
+  unidadeInput.addEventListener("blur", () => {
+    setTimeout(() => {
+      listaUnidades.style.display = "none";
+    }, 200);
+  });
   
   // ==================== PROCESSAMENTO DE LOGIN ====================
   
