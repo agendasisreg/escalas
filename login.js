@@ -4,7 +4,7 @@
  */
 
 import { CONFIG } from './config/config.js';
-import { loadCSV } from './scripts/data-loader.js';
+import { loadData } from './scripts/data-loader.js';
 
 // Variáveis globais
 let unidades = [];
@@ -49,8 +49,9 @@ function setupFooterCredits() {
  */
 async function carregarUnidades() {
     try {
-        unidades = await loadCSV('/data/unidades.csv');
-        
+        // ✅ CORREÇÃO: Usando a função correta
+        const csvData = await loadData('/data/unidades.csv');
+        unidades = csvData.unidades; // ✅ Acesso correto aos dados
         console.log(`✓ Carregadas ${unidades.length} unidades`);
         
         // Ordena unidades alfabeticamente
@@ -325,3 +326,4 @@ function showError(message) {
 
 // Inicializa a página quando carregada
 document.addEventListener('DOMContentLoaded', initLogin);
+
