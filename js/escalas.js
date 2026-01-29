@@ -1,21 +1,23 @@
 // js/escalas.js
 // Versão refatorada com configuração centralizada
+// ============================================================
+
 document.addEventListener("DOMContentLoaded", async () => {
-  // Carregar configurações
+  
+  // ==================== INICIALIZAÇÃO ====================
+  
+  // Carregar créditos
   await SisregUtils.preencherCreditos("footerCreditos");
   
-  // =====================
-  // CONFIGURAÇÕES LOCAIS
-  // =====================
+  // Obter unidade atual
   const UNIDADE_ATUAL = SisregUtils.getUnidade();
   
-  // Preencher nome da unidade
+  // Preencher nome da unidade na tela
   const txtUnidade = document.getElementById("txtUnidade");
-  if (txtUnidade) txtUnidade.innerText = UNIDADE_ATUAL;
+  if (txtUnidade) txtUnidade.textContent = UNIDADE_ATUAL;
   
-  // =====================
-  // VARIÁVEIS
-  // =====================
+  // ==================== VARIÁVEIS ====================
+  
   let profissionais = [];
   let procedimentos = [];
   let profissionalSelecionado = null;
@@ -37,37 +39,67 @@ document.addEventListener("DOMContentLoaded", async () => {
   const vigInicioInput = document.getElementById("vigenciaInicio");
   const vigFimInput = document.getElementById("vigenciaFim");
   const btnExport = document.getElementById("btnExportarCSV");
+  const btnLimpar = document.getElementById("btnLimparTudo");
   
-  // =====================
-  // GERENCIAMENTO DE TABELA LOCAL
-  // =====================
+  // ==================== CARREGAMENTO DE DADOS ====================
+  
+  // Carregar profissionais e procedimentos
+  try {
+    const [profData, procData] = await Promise.all([
+      SisregUtils.carregarDadosJson(SISREG_CONFIG.ARQUIVOS.PROFISSIONAIS),
+      SisregUtils.carregarDadosJson(SISREG_CONFIG.ARQUIVOS.PROCEDIMENTOS)
+    ]);
+    
+    if (profData) {
+      profissionais = profData.filter(p => p.unidade === UNIDADE_ATUAL);
+    }
+    
+    if (procData) {
+      procedimentos = procData;
+    }
+  } catch (error) {
+    console.error("Erro ao carregar dados:", error);
+    SisregUtils.showToast(SISREG_CONFIG.MENSAGENS.ERRO_CONEXAO, "error");
+  }
+  
+  // ==================== FUNÇÕES PRINCIPAIS ====================
+  
+  /**
+   * Carrega tabela local com dados salvos
+   */
   function carregarTabelaLocal() {
     const tabelaBody = document.querySelector("#tabelaEscalas tbody");
-    const escalas = JSON.parse(localStorage.getItem("escalas_salvas") || "[]");
+    const escalas = SisregUtils.carregarLocalStorage(SISREG_CONFIG.ESCALAS_SALVAS_KEY, []);
     
     tabelaBody.innerHTML = "";
     
     if (escalas.length === 0) {
-      tabelaBody.innerHTML = `<tr><td colspan='11' style='text-align:center; padding: 20px; color: ${SISREG_CONFIG.COLORS.gray};'>${SISREG_CONFIG.MESSAGES.emptyTable}</td></tr>`;
+      tabelaBody.innerHTML = `
+        <tr>
+          <td colspan='11' style='text-align:center; padding: 40px 20px; color: ${SISREG_CONFIG.CORES.GRAY}; font-size: 1.1rem;'>
+            ${SISREG_CONFIG.MENSAGENS.TABELA_VAZIA}
+          </td>
+        </tr>
+      `;
       return;
     }
     
     escalas.forEach((payload, index) => {
       const tr = document.createElement("tr");
       tr.innerHTML = `
-        <td>${payload.cpf}</td>
-        <td><strong>${payload.profissional}</strong></td>
-        <td>${payload.cod_procedimento} - ${payload.procedimento}</td>
-        <td>${payload.exames || "-"}</td>
-        <td>${payload.dias_semana}</td>
-        <td>${payload.hora_inicio}</td>
-        <td>${payload.hora_fim}</td>
-        <td>${payload.vagas}</td>
-        <td>${payload.vigencia_inicio}</td>
-        <td>${payload.vigencia_fim}</td>
+        <td>${payload.cpf || ''}</td>
+        <td><strong>${payload.profissional || ''}</strong></td>
+        <td>${payload.cod_procedimento || ''} - ${payload.procedimento || ''}</td>
+        <td>${payload.exames || '-'}</td>
+        <td>${payload.dias_semana || ''}</td>
+        <td>${payload.hora_inicio || ''}</td>
+        <td>${payload.hora_fim || ''}</td>
+        <td>${payload.vagas || 0}</td>
+        <td>${SisregUtils.formatarDataBR(payload.vigencia_inicio)}</td>
+        <td>${SisregUtils.formatarDataBR(payload.vigencia_fim)}</td>
         <td style="text-align:center;">
-          <button class="btn-excluir" data-index="${index}" title="Excluir">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="${SISREG_CONFIG.COLORS.danger}" stroke-width="2">
+          <button class="btn-excluir" data-index="${index}" title="Excluir" style="background:none; border:none; cursor:pointer; color:${SISREG_CONFIG.CORES.DANGER}; font-weight:bold; font-size: 1.2rem; padding: 4px 8px; border-radius: 6px; transition: 0.2s;">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="${SISREG_CONFIG.CORES.DANGER}" stroke-width="2">
               <path d="M18 6L6 18M6 6l12 12"></path>
             </svg>
           </button>
@@ -80,50 +112,35 @@ document.addEventListener("DOMContentLoaded", async () => {
     document.querySelectorAll(".btn-excluir").forEach(btn => {
       btn.onclick = (e) => {
         const idx = e.target.closest("button").getAttribute("data-index");
-        let atual = JSON.parse(localStorage.getItem("escalas_salvas") || "[]");
+        let atual = SisregUtils.carregarLocalStorage(SISREG_CONFIG.ESCALAS_SALVAS_KEY, []);
         atual.splice(idx, 1);
-        localStorage.setItem("escalas_salvas", JSON.stringify(atual));
+        SisregUtils.salvarLocalStorage(SISREG_CONFIG.ESCALAS_SALVAS_KEY, atual);
         carregarTabelaLocal();
+        SisregUtils.showToast(SISREG_CONFIG.MENSAGENS.ITEM_EXCLUIDO, "success");
       };
     });
   }
   
-  // =====================
-  // LÓGICA DE EXPORTAÇÃO E ENVIO
-  // =====================
+  /**
+   * Exporta dados para CSV e envia para API
+   */
   async function exportarEEnviar() {
-    const escalas = JSON.parse(localStorage.getItem("escalas_salvas") || "[]");
+    const escalas = SisregUtils.carregarLocalStorage(SISREG_CONFIG.ESCALAS_SALVAS_KEY, []);
     
     if (escalas.length === 0) {
-      alert(SISREG_CONFIG.MESSAGES.noData);
+      SisregUtils.showToast(SISREG_CONFIG.MENSAGENS.NENHUM_DADO, "warning");
       return;
     }
     
-    if (!confirm(SISREG_CONFIG.MESSAGES.confirmExport)) return;
+    if (!confirm(SISREG_CONFIG.MENSAGENS.CONFIRMAR_EXPORTACAO)) return;
     
     // 1. GERAR E BAIXAR CSV
-    const rows = escalas.map(e => [
-      e.cpf, e.profissional, e.cod_procedimento, e.procedimento, e.exames,
-      e.dias_semana, e.hora_inicio, e.hora_fim, e.vagas, 
-      e.vigencia_inicio, e.vigencia_fim, e.unidade
-    ]);
-    
-    let csvContent = "data:text/csv;charset=utf-8," +
-      SISREG_CONFIG.CSV_HEADERS.join(",") + "\n" +
-      rows.map(e => e.join(",")).join("\n");
-    
-    const encodedUri = encodeURI(csvContent);
-    const link = document.createElement("a");
-    link.setAttribute("href", encodedUri);
-    link.setAttribute("download", `Escalas_${UNIDADE_ATUAL}_${new Date().toLocaleDateString('pt-BR')}.csv`);
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+    const csvContent = SisregUtils.gerarCSV(escalas);
+    SisregUtils.baixarCSV(csvContent);
     
     // 2. ENVIAR PARA O SHEETS (EM LOTE)
     if (btnExport) {
-      btnExport.innerHTML = `<span style="display:inline-flex;align-items:center;gap:6px;"><svg width="16" height="16" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" stroke="#fff" stroke-width="2" fill="none"><animate attributeName="stroke-dasharray" values="0,63 63,0" dur="1.5s" repeatCount="indefinite"/></circle></svg>Enviando...</span>`;
-      btnExport.disabled = true;
+      SisregUtils.showLoading(btnExport, "Enviando para Nuvem...");
     }
     
     let erros = 0;
@@ -141,40 +158,52 @@ document.addEventListener("DOMContentLoaded", async () => {
     }
     
     if (erros === 0) {
-      alert("✅ CSV baixado e todos os dados enviados ao Sheets com sucesso!");
-      localStorage.setItem("escalas_salvas", "[]");
+      SisregUtils.showToast(SISREG_CONFIG.MENSAGENS.EXPORTADO_SUCESSO, "success");
+      SisregUtils.salvarLocalStorage(SISREG_CONFIG.ESCALAS_SALVAS_KEY, []);
       carregarTabelaLocal();
     } else {
-      alert(`⚠️ CSV baixado, mas houve erro no envio de ${erros} itens para o Sheets. Verifique sua conexão.`);
+      const msgErro = SISREG_CONFIG.MENSAGENS.EXPORTADO_ERRO.replace("{erros}", erros);
+      SisregUtils.showToast(msgErro, "warning");
     }
     
     if (btnExport) {
-      btnExport.textContent = "Exportar CSV e Finalizar Escalas";
-      btnExport.disabled = false;
+      SisregUtils.hideLoading(btnExport);
     }
   }
   
-  // Vincular botão
+  /**
+   * Limpa todos os dados locais
+   */
+  function limparTudo() {
+    if (!confirm(SISREG_CONFIG.MENSAGENS.CONFIRMAR_LIMPEZA)) return;
+    
+    SisregUtils.salvarLocalStorage(SISREG_CONFIG.ESCALAS_SALVAS_KEY, []);
+    carregarTabelaLocal();
+    SisregUtils.showToast("✅ Todos os dados locais foram limpos!", "success");
+  }
+  
+  // ==================== EVENTOS ====================
+  
+  // Botão Exportar
   if (btnExport) {
     btnExport.onclick = exportarEEnviar;
   }
   
-  // =====================
-  // UTILITÁRIOS E AUTOCOMPLETE
-  // =====================
-  function limparTexto(txt) { return txt ? txt.replace(/"/g, "").trim() : ""; }
-  function obterCodigo(p) { return p.cod_int || p["cod int"] || ""; }
+  // Botão Limpar
+  if (btnLimpar) {
+    btnLimpar.onclick = limparTudo;
+  }
   
-  // Carregar dados
-  Promise.all([
-    fetch("data/profissionais.json").then(r => r.json()),
-    fetch("data/procedimentos_exames.json").then(r => r.json())
-  ]).then(([profData, procData]) => {
-    profissionais = profData.filter(p => p.unidade === UNIDADE_ATUAL);
-    procedimentos = procData;
-  });
+  // Logout
+  const btnLogoutTopo = document.getElementById("btnLogoutTopo");
+  if (btnLogoutTopo) {
+    btnLogoutTopo.onclick = () => {
+      window.location.href = SISREG_CONFIG.PAGINAS.INDEX;
+    };
+  }
   
-  // Autocomplete CPF
+  // ==================== AUTOCOMPLETE CPF/NOME ====================
+  
   cpfInput.addEventListener("blur", () => {
     const prof = profissionais.find(p => p.cpf === cpfInput.value.trim());
     avisoInativo.style.display = "none";
@@ -187,7 +216,6 @@ document.addEventListener("DOMContentLoaded", async () => {
     }
   });
   
-  // Autocomplete Nome
   nomeInput.addEventListener("input", () => {
     listaNomes.innerHTML = "";
     const termo = nomeInput.value.toLowerCase();
@@ -216,7 +244,8 @@ document.addEventListener("DOMContentLoaded", async () => {
     listaNomes.style.display = "block";
   });
   
-  // Autocomplete Procedimento
+  // ==================== AUTOCOMPLETE PROCEDIMENTO ====================
+  
   procedimentoInput.addEventListener("input", () => {
     listaProcedimentos.innerHTML = "";
     const termo = procedimentoInput.value.toLowerCase();
@@ -226,11 +255,11 @@ document.addEventListener("DOMContentLoaded", async () => {
     }
     
     procedimentos
-      .filter(p => limparTexto(p.procedimento).toLowerCase().includes(termo))
+      .filter(p => SisregUtils.limparTexto(p.procedimento).toLowerCase().includes(termo))
       .slice(0, 30)
       .forEach(p => {
-        const codigo = obterCodigo(p);
-        const texto = limparTexto(p.procedimento);
+        const codigo = p.cod_int || p["cod int"] || "";
+        const texto = SisregUtils.limparTexto(p.procedimento);
         const div = document.createElement("div");
         div.textContent = `${codigo} - ${texto}`;
         div.onclick = () => {
@@ -246,15 +275,16 @@ document.addEventListener("DOMContentLoaded", async () => {
     listaProcedimentos.style.display = "block";
   });
   
-  // Submissão do formulário
+  // ==================== SUBMISSÃO DO FORMULÁRIO ====================
+  
   form.addEventListener("submit", e => {
     e.preventDefault();
     
     const payload = {
       cpf: cpfInput.value,
       profissional: nomeInput.value,
-      cod_procedimento: procedimentoSelecionado ? obterCodigo(procedimentoSelecionado) : (procedimentoInput.value.split(" - ")[0] || ""),
-      procedimento: procedimentoSelecionado ? limparTexto(procedimentoSelecionado.procedimento) : (procedimentoInput.value.split(" - ")[1] || procedimentoInput.value),
+      cod_procedimento: procedimentoSelecionado ? (procedimentoSelecionado.cod_int || procedimentoSelecionado["cod int"] || "") : (procedimentoInput.value.split(" - ")[0] || ""),
+      procedimento: procedimentoSelecionado ? SisregUtils.limparTexto(procedimentoSelecionado.procedimento) : (procedimentoInput.value.split(" - ")[1] || procedimentoInput.value),
       exames: examesInput.value,
       dias_semana: diasInput.value,
       hora_inicio: horaInicioInput.value,
@@ -265,9 +295,9 @@ document.addEventListener("DOMContentLoaded", async () => {
       unidade: UNIDADE_ATUAL
     };
     
-    let locais = JSON.parse(localStorage.getItem("escalas_salvas") || "[]");
+    let locais = SisregUtils.carregarLocalStorage(SISREG_CONFIG.ESCALAS_SALVAS_KEY, []);
     locais.push(payload);
-    localStorage.setItem("escalas_salvas", JSON.stringify(locais));
+    SisregUtils.salvarLocalStorage(SISREG_CONFIG.ESCALAS_SALVAS_KEY, locais);
     
     carregarTabelaLocal();
     form.reset();
@@ -277,12 +307,19 @@ document.addEventListener("DOMContentLoaded", async () => {
     
     // Feedback visual
     const card = form.closest('.card');
-    card.style.boxShadow = `0 0 20px 4px ${SISREG_CONFIG.COLORS.accent}`;
-    setTimeout(() => {
-      card.style.boxShadow = "";
-    }, 500);
+    if (card) {
+      card.style.boxShadow = `0 0 30px 6px ${SISREG_CONFIG.CORES.ACCENT}`;
+      setTimeout(() => {
+        card.style.boxShadow = "";
+      }, 600);
+    }
+    
+    SisregUtils.showToast(SISREG_CONFIG.MENSAGENS.DADOS_SALVOS, "success");
   });
+  
+  // ==================== INICIALIZAÇÃO ====================
   
   // Carregar tabela inicial
   carregarTabelaLocal();
+  
 });
