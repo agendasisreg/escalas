@@ -3,333 +3,74 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Login | Agenda SISREG</title>
-    
-    <!-- Fonte Inter -->
+    <title>Login | Agenda SISREG Amazonas</title>
+
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
-    
-    <!-- Estilos compartilhados -->
-    <link rel="stylesheet" href="shared/styles/variables.css">
-    <link rel="stylesheet" href="shared/styles/base.css">
-    
-    <!-- Estilos específicos do login -->
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
-        body {
-            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            background: #f5f7fa;
-            min-height: 100vh;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            padding: 20px;
-        }
-
-        .login-container {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            width: 100%;
-            max-width: 420px;
-            gap: 32px;
-        }
-
-        .login-brand {
-            text-align: center;
-            width: 100%;
-        }
-
-        .login-brand__icon {
-            width: 60px;
-            height: 60px;
-            margin: 0 auto 16px;
-            background: linear-gradient(135deg, #2196F3 0%, #1976D2 100%);
-            border-radius: 12px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: white;
-            font-size: 28px;
-            box-shadow: 0 4px 12px rgba(33, 150, 243, 0.2);
-        }
-
-        .login-brand__text h1 {
-            font-size: 28px;
-            font-weight: 700;
-            color: #212121;
-            margin-bottom: 8px;
-            letter-spacing: -0.5px;
-        }
-
-        .login-brand__text p {
-            font-size: 14px;
-            color: #616161;
-            font-weight: 400;
-        }
-
-        .login-card {
-            background: white;
-            border-radius: 16px;
-            box-shadow: 0 2px 24px rgba(0, 0, 0, 0.08);
-            padding: 32px;
-            width: 100%;
-        }
-
-        .login-card h2 {
-            font-size: 20px;
-            font-weight: 600;
-            color: #212121;
-            margin-bottom: 8px;
-        }
-
-        .login-card__subtitle {
-            font-size: 14px;
-            color: #757575;
-            margin-bottom: 24px;
-            font-weight: 400;
-        }
-
-        .login-form {
-            display: flex;
-            flex-direction: column;
-            gap: 20px;
-        }
-
-        .form-group {
-            display: flex;
-            flex-direction: column;
-            gap: 8px;
-        }
-
-        .form-group label {
-            font-size: 14px;
-            font-weight: 600;
-            color: #212121;
-        }
-
-        .form-group input,
-        .form-group select {
-            padding: 12px 16px;
-            border: 1px solid #e0e0e0;
-            border-radius: 8px;
-            font-size: 14px;
-            font-family: inherit;
-            transition: border-color 0.2s, box-shadow 0.2s;
-        }
-
-        .form-group input:focus,
-        .form-group select:focus {
-            outline: none;
-            border-color: #2196F3;
-            box-shadow: 0 0 0 3px rgba(33, 150, 243, 0.1);
-        }
-
-        .autocomplete-container {
-            position: relative;
-        }
-
-        .autocomplete-results {
-            position: absolute;
-            top: 100%;
-            left: 0;
-            right: 0;
-            background: white;
-            border: 1px solid #e0e0e0;
-            border-radius: 8px;
-            max-height: 240px;
-            overflow-y: auto;
-            z-index: 1000;
-            margin-top: 4px;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-            display: none;
-        }
-
-        .autocomplete-item {
-            padding: 12px 16px;
-            cursor: pointer;
-            transition: background 0.2s;
-        }
-
-        .autocomplete-item:hover {
-            background: #f5f7fa;
-        }
-
-        .autocomplete-item.selected {
-            background: #e3f2fd;
-            color: #1976d2;
-        }
-
-        .autocomplete-item strong {
-            display: block;
-            color: #212121;
-            font-weight: 600;
-        }
-
-        .autocomplete-item div {
-            font-size: 12px;
-            color: #757575;
-            margin-top: 4px;
-        }
-
-        .btn {
-            padding: 14px;
-            border: none;
-            border-radius: 8px;
-            font-size: 16px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.2s;
-            text-align: center;
-            font-family: inherit;
-        }
-
-        .btn-primary {
-            background: linear-gradient(135deg, #2196F3 0%, #1976D2 100%);
-            color: white;
-            width: 100%;
-        }
-
-        .btn-primary:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 4px 16px rgba(33, 150, 243, 0.3);
-        }
-
-        .btn-primary:active {
-            transform: translateY(0);
-        }
-
-        .btn-primary:disabled {
-            background: #bdbdbd;
-            cursor: not-allowed;
-            transform: none;
-        }
-
-        .btn-primary.loading {
-            position: relative;
-            color: transparent;
-        }
-
-        .btn-primary.loading::after {
-            content: "";
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            width: 20px;
-            height: 20px;
-            border: 3px solid rgba(255, 255, 255, 0.3);
-            border-top-color: white;
-            border-radius: 50%;
-            animation: spin 1s linear infinite;
-        }
-
-        .form-error {
-            color: #f44336;
-            font-size: 14px;
-            font-weight: 500;
-            text-align: center;
-            padding: 12px;
-            background: #ffebee;
-            border-radius: 8px;
-            display: none;
-        }
-
-        .form-error.show {
-            display: block;
-            animation: fadeIn 0.3s ease;
-        }
-
-        @keyframes spin {
-            to { transform: translate(-50%, -50%) rotate(360deg); }
-        }
-
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(-10px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-
-        .app-footer {
-            margin-top: 24px;
-            text-align: center;
-            color: #757575;
-            font-size: 12px;
-            width: 100%;
-            padding-top: 24px;
-            border-top: 1px solid #e0e0e0;
-        }
-
-        .app-footer strong {
-            color: #212121;
-        }
-    </style>
+    <link rel="stylesheet" href="shared/css/variables.css">
+    <link rel="stylesheet" href="shared/css/base.css">
+    <link rel="stylesheet" href="shared/css/theme.css">
+    <link rel="stylesheet" href="shared/css/style.css">
 </head>
+
 <body class="login-page">
-    <main class="login-container">
-        <!-- Brand -->
-        <section class="login-brand">
-            <div class="login-brand__icon" aria-hidden="true">
-                🏥
-            </div>
-            <div class="login-brand__text">
-                <h1>AGENDA SISREG</h1>
-                <p>Complexo Regulador do Amazonas</p>
-            </div>
-        </section>
+    <div id="header-placeholder"></div>
 
-        <!-- Login Card -->
-        <section class="login-card">
-            <h2>Acesso Restrito</h2>
-            <p class="login-card__subtitle">Selecione sua unidade executante.</p>
+    <main class="container">
+        <section class="login-container" style="max-width: 450px; margin: 60px auto;">
             
-            <form id="formLogin" class="login-form">
-                <div class="form-group">
-                    <label for="unidade">Unidade de Saúde</label>
-                    <div class="autocomplete-container">
-                        <input 
-                            type="text" 
-                            id="unidade" 
-                            name="unidade" 
-                            placeholder="Digite ou selecione a unidade..."
-                            autocomplete="off"
-                            required
-                        >
-                        <div id="autocompleteResults" class="autocomplete-results"></div>
+            <div class="login-brand" style="text-align: center; margin-bottom: 30px;">
+                <div style="background: var(--am-blue-dark); width: 80px; height: 80px; border-radius: var(--am-radius); display: flex; align-items: center; justify-content: center; margin: 0 auto 15px; border-bottom: 4px solid var(--am-red);">
+                    <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                        <line x1="16" y1="2" x2="16" y2="6"></line>
+                        <line x1="8" y1="2" x2="8" y2="6"></line>
+                        <line x1="3" y1="10" x2="21" y2="10"></line>
+                    </svg>
+                </div>
+                <h1 style="color: var(--am-blue-dark); margin: 0; font-size: 1.8rem; font-weight: 700;">AGENDA SISREG</h1>
+                <p style="color: var(--am-text); opacity: 0.7; font-size: 0.9rem;">Complexo Regulador do Amazonas</p>
+            </div>
+
+            <div class="card" style="background: white; padding: 30px; border-radius: var(--am-radius); box-shadow: var(--am-shadow); border-top: 5px solid var(--am-yellow);">
+                <h2 style="font-size: 1.2rem; margin-bottom: 5px; color: var(--am-blue-dark);">Acesso Restrito</h2>
+                <p style="font-size: 0.85rem; margin-bottom: 25px; color: var(--am-text); opacity: 0.8;">Selecione sua unidade executante para prosseguir.</p>
+
+                <form id="formLogin">
+                    <div style="margin-bottom: 20px;">
+                        <label for="unidadeSelect" style="display: block; font-size: 0.8rem; font-weight: 600; margin-bottom: 8px; color: var(--am-blue-dark);">Unidade de Saúde</label>
+                        <select id="unidadeSelect" required style="width: 100%; padding: 12px; border: 1px solid var(--am-gray-light); border-radius: 8px; background: var(--am-bg-main); font-family: inherit;">
+                            <option value="" disabled selected>Carregando unidades...</option>
+                        </select>
                     </div>
-                </div>
 
-                <div class="form-group">
-                    <label for="password">Senha (CNES da Unidade)</label>
-                    <input 
-                        type="password" 
-                        id="password" 
-                        name="password" 
-                        placeholder="Digite o código CNES"
-                        maxlength="7"
-                        required
-                    >
-                    <small style="font-size: 12px; color: #757575; margin-top: 4px;">
-                        O CNES deve ter 7 dígitos (ex: 0201123)
-                    </small>
-                </div>
+                    <div style="margin-bottom: 25px;">
+                        <label for="password" style="display: block; font-size: 0.8rem; font-weight: 600; margin-bottom: 8px; color: var(--am-blue-dark);">Senha (CNES da Unidade)</label>
+                        <input type="password" id="password" placeholder="Digite o código CNES" required style="width: 100%; padding: 12px; border: 1px solid var(--am-gray-light); border-radius: 8px; background: var(--am-bg-main); font-family: inherit;">
+                    </div>
 
-                <button type="submit" id="btnLogin" class="btn btn-primary">
-                    Entrar no Sistema
-                </button>
+                    <button type="submit" style="width: 100%; padding: 14px; background: var(--am-blue-dark); color: white; border: none; border-radius: 8px; font-weight: 700; cursor: pointer; transition: var(--am-transition); text-transform: uppercase; letter-spacing: 1px;">
+                        Entrar no Sistema
+                    </button>
 
-                <div id="loginError" class="form-error" aria-live="polite"></div>
-            </form>
+                    <div id="loginError" style="color: var(--am-red); font-size: 0.8rem; margin-top: 15px; text-align: center; font-weight: 600;"></div>
+                </form>
+            </div>
         </section>
     </main>
 
-    <!-- Footer com créditos -->
-    <footer id="footerCreditos" class="app-footer"></footer>
+    <div id="footer-placeholder"></div>
 
-    <!-- Script do login -->
-    <script type="module" src="login.js"></script>
+    <script src="config/config.js"></script>
+    <script src="shared/components/footer.js"></script>
+    <script src="js/login.js"></script>
+
+    <script>
+        // Inicializa o rodapé compartilhado e injeta as configurações do CONFIG
+        window.addEventListener('DOMContentLoaded', () => {
+            if (typeof carregarFooter === 'function') {
+                carregarFooter();
+            }
+        });
+    </script>
 </body>
 </html>
