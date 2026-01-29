@@ -60,8 +60,8 @@ converter(
 
 // PROCEDIMENTOS / EXAMES
 converter(
-  "data/procedimentos_exames.csv",
-  "data/procedimentos_exames.json"
+  "data/procedimentos.csv",
+  "data/procedimentos.json"
 );
 
 // UNIDADES 
