@@ -178,103 +178,106 @@ document.addEventListener("DOMContentLoaded", async () => {
   function gerarRadial(dados) {
     const svgEl = document.getElementById("chartRadial");
     if (!svgEl || typeof d3 === "undefined") return;
-
+  
     const svg = d3.select(svgEl);
     svg.selectAll("*").remove();
-
-    // Dimensões responsivas
-    const w = svgEl.clientWidth || 520;
+  
+    const w = svgEl.clientWidth || 420;
     const h = svgEl.clientHeight || 320;
     const cx = w / 2;
     const cy = h / 2;
     const R = Math.min(w, h) * 0.42;
-    const r0 = R * 0.25;
-
+  
     svg.attr("viewBox", `0 0 ${w} ${h}`);
-
-    const dias = SISREG_CONFIG.DIAS_SEMANA || ["DOM","SEG","TER","QUA","QUI","SEX","SAB"];
-    const idxDia = Object.fromEntries(dias.map((d,i)=>[d,i]));
-
-    const hMin = 7;
-    const hMax = 18; // como seu horário padrão
-    const horas = d3.range(hMin, hMax + 1);
-
-    // Agrega (dia,hora) -> vagas
-    const map = new Map();
+  
+    const dias = ["DOM","SEG","TER","QUA","QUI","SEX","SAB"];
+  
+    // ===== AGREGAÇÃO: total de vagas por dia =====
+    const byDay = Object.fromEntries(dias.map(d => [d, 0]));
+  
     dados.forEach(d => {
-      const diasSel = SisregUtils.extrairDias(d.dias_semana);
-      const h0 = parseInt(String(SisregUtils.formatarHora(d.hora_inicio) || "0").split(":")[0] || "0", 10);
-      diasSel.forEach(di => {
-        const key = `${di}|${h0}`;
-        map.set(key, (map.get(key) || 0) + (Number(d.vagas) || 0));
-      });
+      const v = Number(d.vagas) || 0;
+  
+      const diasSel = String(d.dias_semana || "")
+        .toUpperCase()
+        .split(",")
+        .map(x => x.trim())
+        .filter(x => dias.includes(x));
+  
+      if (diasSel.length === 0) {
+        byDay["SEG"] += v; // fallback
+      } else {
+        diasSel.forEach(di => byDay[di] += v);
+      }
     });
-
-    let maxV = 1;
-    map.forEach(v => { if (v > maxV) maxV = v; });
-
-    const g = svg.append("g").attr("transform", `translate(${cx},${cy})`);
-
-    const angleStep = (Math.PI * 2) / dias.length;
-
+  
+    const maxV = Math.max(1, ...Object.values(byDay));
+  
+    const g = svg.append("g")
+      .attr("transform", `translate(${cx},${cy})`);
+  
+    const angle = d3.scaleBand()
+      .domain(dias)
+      .range([0, Math.PI * 2])
+      .align(0);
+  
+    const radius = d3.scaleLinear()
+      .domain([0, maxV])
+      .range([0, R]);
+  
+    const color = d3.scaleSequential(d3.interpolateYlOrBr)
+      .domain([0, maxV]);
+  
     const arc = d3.arc()
-      .startAngle(d => d.a0)
-      .endAngle(d => d.a1)
-      .innerRadius(d => d.ri)
-      .outerRadius(d => d.ro);
-
-    const color = d3.scaleSequential(d3.interpolateYlOrBr).domain([0, maxV]);
-
-    // Desenha células (arcos)
-    const cells = [];
-    dias.forEach((di, i) => {
-      horas.forEach((hh, j) => {
-        const v = map.get(`${di}|${hh}`) || 0;
-
-        const a0 = i * angleStep - Math.PI/2;
-        const a1 = a0 + angleStep;
-
-        const ringStep = (R - r0) / horas.length;
-        const ri = r0 + j * ringStep;
-        const ro = ri + ringStep * 0.94;
-
-        cells.push({ di, hh, v, a0, a1, ri, ro });
-      });
-    });
-
-    g.selectAll("path.cell")
-      .data(cells)
+      .innerRadius(0)
+      .outerRadius(d => radius(d.value))
+      .startAngle(d => angle(d.day))
+      .endAngle(d => angle(d.day) + angle.bandwidth())
+      .padAngle(0.02)
+      .padRadius(0);
+  
+    const data = dias.map(day => ({
+      day,
+      value: byDay[day]
+    }));
+  
+    g.selectAll("path")
+      .data(data)
       .enter()
       .append("path")
-      .attr("class", "cell")
       .attr("d", arc)
-      .attr("fill", d => d.v ? color(d.v) : "rgba(0,0,0,0.04)")
-      .attr("stroke", "rgba(0,0,0,0.06)")
-      .attr("stroke-width", 1)
+      .attr("fill", d => color(d.value))
+      .attr("opacity", 0.9)
+      .attr("stroke", "rgba(0,0,0,0.12)")
       .on("mousemove", (event, d) => {
-        showTip(
-          `<strong>${d.di}</strong> • ${String(d.hh).padStart(2,"0")}:00<br/>Vagas: <strong>${d.v}</strong>`,
-          event.clientX, event.clientY
-        );
+        const tip = `${d.day}<br/><strong>${d.value}</strong> vagas`;
+        const el = document.getElementById("vizTooltip");
+        if (el) {
+          el.innerHTML = tip;
+          el.style.left = event.clientX + 12 + "px";
+          el.style.top = event.clientY + 12 + "px";
+          el.style.display = "block";
+        }
       })
-      .on("mouseleave", hideTip);
-
-    // Rótulos dos dias
-    g.selectAll("text.day")
-      .data(dias)
+      .on("mouseleave", () => {
+        const el = document.getElementById("vizTooltip");
+        if (el) el.style.display = "none";
+      });
+  
+    // ===== RÓTULOS =====
+    g.selectAll("text")
+      .data(data)
       .enter()
       .append("text")
-      .attr("class", "day")
       .attr("text-anchor", "middle")
-      .attr("alignment-baseline", "middle")
       .attr("font-size", 11)
-      .attr("fill", "rgba(0,0,0,0.72)")
-      .attr("transform", (d,i) => {
-        const a = (i + 0.5) * angleStep - Math.PI/2;
-        const rr = R + 16;
-        return `translate(${Math.cos(a)*rr},${Math.sin(a)*rr})`;
+      .attr("fill", "rgba(0,0,0,0.75)")
+      .attr("transform", d => {
+        const a = angle(d.day) + angle.bandwidth() / 2 - Math.PI / 2;
+        const r = R + 18;
+        return `translate(${Math.cos(a) * r},${Math.sin(a) * r})`;
       })
-      .text(d => d);
+      .text(d => d.day);
   }
 
   /**
