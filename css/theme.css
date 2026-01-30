@@ -48,13 +48,13 @@ HEADER - Fundo com gradiente azul (igual ao login)
 .dash-header {
   background: linear-gradient(135deg, #0d1b44 0%, #1a2a6c 50%, #0d1b44 100%);
   background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100" viewBox="0 0 100 100"><rect width="100" height="100" fill="%230d1b44"/><path d="M20,30 L30,20 L40,30 L30,40 Z" fill="%231a2a6c" opacity="0.1"/><path d="M60,50 L70,40 L80,50 L70,60 Z" fill="%231a2a6c" opacity="0.1"/><path d="M30,70 L40,60 L50,70 L40,80 Z" fill="%231a2a6c" opacity="0.1"/><path d="M70,20 L80,10 L90,20 L80,30 Z" fill="%231a2a6c" opacity="0.1"/><path d="M10,60 L20,50 L30,60 L20,70 Z" fill="%231a2a6c" opacity="0.1"/></svg>');
-  background-size: 120px 120px;
+  background-size: 60px 60px;
   background-position: center;
   position: relative;
   overflow: hidden;
   box-shadow: 0 4px 20px rgba(0,0,0,0.25);
   border-bottom: 4px solid var(--am-red);
-  padding: 16px 20px !important;
+  padding: 120px 20px !important;
   animation: slideDownHeader 0.4s ease;
 }
 
