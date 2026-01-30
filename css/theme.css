@@ -54,7 +54,7 @@ HEADER - Fundo com gradiente azul (igual ao login)
   overflow: hidden;
   box-shadow: 0 4px 20px rgba(0,0,0,0.25);
   border-bottom: 4px solid var(--am-red);
-  padding: 120px 20px !important;
+  padding: 60px 20px !important;
   animation: slideDownHeader 0.4s ease;
 }
 
