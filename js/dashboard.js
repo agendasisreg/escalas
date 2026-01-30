@@ -143,91 +143,102 @@ document.addEventListener("DOMContentLoaded", async () => {
     atualizarGraficos(dadosParaKPI);
   }
   
-  // ==================== GRÁFICOS (SUBSTITUÍDOS) ====================
+  // ==================== GRÁFICOS ====================
+  // [ALTERADO APENAS AQUI: removi os antigos e coloquei novos]
   
   /**
-   * Atualiza TODOS os gráficos (NOVOS)
-   * (mantive o nome e o pipeline exatamente como estava, só troquei as chamadas)
+   * Atualiza TODOS os gráficos (novos)
    */
   function atualizarGraficos(dados) {
     gerarRadial(dados);
-    gerarScatterProfissionais(dados);
-    gerarRadarSemana(dados);
-    gerarSankeyFluxo(dados);
-    gerarMapaRisco(dados);
-    gerarInsights(dados); // mantido + melhorado
+    gerarEficienciaBubble(dados);
+    gerarStreamHorario(dados);
+    gerarSankey(dados);
+    gerarInsights(dados); // mantido e melhorado
+  }
+
+  // ---------- Helpers de tooltip D3 ----------
+  function showTip(html, x, y) {
+    const el = document.getElementById("vizTooltip");
+    if (!el) return;
+    el.innerHTML = html;
+    el.style.left = (x + 12) + "px";
+    el.style.top = (y + 12) + "px";
+    el.style.display = "block";
+  }
+  function hideTip() {
+    const el = document.getElementById("vizTooltip");
+    if (!el) return;
+    el.style.display = "none";
   }
 
   /**
-   * Gráfico A: Mapa Radial (Dia × Hora) em SVG (D3)
-   * - Visual "IA-like" e bem diferente do tradicional
+   * Gráfico A: Radial (dia x hora) — visual “IA-like”
    */
   function gerarRadial(dados) {
-    const el = document.getElementById("chartRadial");
-    if (!el || typeof d3 === "undefined") return;
+    const svgEl = document.getElementById("chartRadial");
+    if (!svgEl || typeof d3 === "undefined") return;
 
-    const svg = d3.select(el);
+    const svg = d3.select(svgEl);
     svg.selectAll("*").remove();
 
-    const width = el.clientWidth || 900;
-    const height = el.clientHeight || 360;
-    svg.attr("viewBox", `0 0 ${width} ${height}`);
+    // Dimensões responsivas
+    const w = svgEl.clientWidth || 520;
+    const h = svgEl.clientHeight || 320;
+    const cx = w / 2;
+    const cy = h / 2;
+    const R = Math.min(w, h) * 0.42;
+    const r0 = R * 0.25;
 
-    const cx = width / 2;
-    const cy = height / 2;
-    const g = svg.append("g").attr("transform", `translate(${cx},${cy})`);
+    svg.attr("viewBox", `0 0 ${w} ${h}`);
 
-    const dias = SISREG_CONFIG.DIAS_SEMANA; // ["DOM","SEG",...]
+    const dias = SISREG_CONFIG.DIAS_SEMANA || ["DOM","SEG","TER","QUA","QUI","SEX","SAB"];
     const idxDia = Object.fromEntries(dias.map((d,i)=>[d,i]));
 
-    // horas de interesse (pega do seu padrão 7..18, mas ajusta se necessário)
-    const H0 = 7, H1 = 18;
-    const horas = [];
-    for (let h = H0; h <= H1; h++) horas.push(h);
+    const hMin = 7;
+    const hMax = 18; // como seu horário padrão
+    const horas = d3.range(hMin, hMax + 1);
 
-    // Agrega (dia, hora) -> vagas
-    const mapa = new Map();
+    // Agrega (dia,hora) -> vagas
+    const map = new Map();
     dados.forEach(d => {
       const diasSel = SisregUtils.extrairDias(d.dias_semana);
       const h0 = parseInt(String(SisregUtils.formatarHora(d.hora_inicio) || "0").split(":")[0] || "0", 10);
-
-      // força no range do radial
-      const hh = Math.max(H0, Math.min(H1, isFinite(h0) ? h0 : H0));
-      const v = Number(d.vagas) || 0;
-
-      (diasSel.length ? diasSel : ["SEG"]).forEach(di => {
-        const key = `${di}|${hh}`;
-        mapa.set(key, (mapa.get(key) || 0) + v);
+      diasSel.forEach(di => {
+        const key = `${di}|${h0}`;
+        map.set(key, (map.get(key) || 0) + (Number(d.vagas) || 0));
       });
     });
 
     let maxV = 1;
-    mapa.forEach(v => { if (v > maxV) maxV = v; });
+    map.forEach(v => { if (v > maxV) maxV = v; });
 
-    const innerR = Math.min(width, height) * 0.12;
-    const outerR = Math.min(width, height) * 0.46;
+    const g = svg.append("g").attr("transform", `translate(${cx},${cy})`);
 
-    const angle = d3.scaleLinear()
-      .domain([0, dias.length])
-      .range([0, Math.PI * 2]);
+    const angleStep = (Math.PI * 2) / dias.length;
 
-    const ring = d3.scaleBand()
-      .domain(horas.map(String))
-      .range([innerR, outerR])
-      .paddingInner(0.07);
+    const arc = d3.arc()
+      .startAngle(d => d.a0)
+      .endAngle(d => d.a1)
+      .innerRadius(d => d.ri)
+      .outerRadius(d => d.ro);
 
-    const color = d3.scaleSequential()
-      .domain([0, maxV])
-      .interpolator(d3.interpolateTurbo);
+    const color = d3.scaleSequential(d3.interpolateYlOrBr).domain([0, maxV]);
 
-    // Anéis por hora; setores por dia
-    const arc = d3.arc();
-
+    // Desenha células (arcos)
     const cells = [];
-    dias.forEach(di => {
-      horas.forEach(h => {
-        const key = `${di}|${h}`;
-        cells.push({ di, h, v: mapa.get(key) || 0 });
+    dias.forEach((di, i) => {
+      horas.forEach((hh, j) => {
+        const v = map.get(`${di}|${hh}`) || 0;
+
+        const a0 = i * angleStep - Math.PI/2;
+        const a1 = a0 + angleStep;
+
+        const ringStep = (R - r0) / horas.length;
+        const ri = r0 + j * ringStep;
+        const ro = ri + ringStep * 0.94;
+
+        cells.push({ di, hh, v, a0, a1, ri, ro });
       });
     });
 
@@ -236,357 +247,78 @@ document.addEventListener("DOMContentLoaded", async () => {
       .enter()
       .append("path")
       .attr("class", "cell")
-      .attr("d", d => {
-        const i = idxDia[d.di];
-        const a0 = angle(i);
-        const a1 = angle(i + 1);
-        const r0 = ring(String(d.h));
-        const r1 = r0 + ring.bandwidth();
-        return arc({
-          innerRadius: r0,
-          outerRadius: r1,
-          startAngle: a0,
-          endAngle: a1
-        });
+      .attr("d", arc)
+      .attr("fill", d => d.v ? color(d.v) : "rgba(0,0,0,0.04)")
+      .attr("stroke", "rgba(0,0,0,0.06)")
+      .attr("stroke-width", 1)
+      .on("mousemove", (event, d) => {
+        showTip(
+          `<strong>${d.di}</strong> • ${String(d.hh).padStart(2,"0")}:00<br/>Vagas: <strong>${d.v}</strong>`,
+          event.clientX, event.clientY
+        );
       })
-      .attr("fill", d => color(d.v))
-      .attr("opacity", d => (d.v > 0 ? 0.95 : 0.18))
-      .append("title")
-      .text(d => `${d.di} ${String(d.h).padStart(2,"0")}:00 • ${d.v} vagas`);
+      .on("mouseleave", hideTip);
 
-    // Labels dos dias
-    const labelR = outerR + 14;
+    // Rótulos dos dias
     g.selectAll("text.day")
       .data(dias)
       .enter()
       .append("text")
       .attr("class", "day")
       .attr("text-anchor", "middle")
+      .attr("alignment-baseline", "middle")
       .attr("font-size", 11)
-      .attr("fill", "rgba(0,0,0,0.75)")
-      .attr("transform", (d, i) => {
-        const a = angle(i + 0.5) - Math.PI / 2;
-        const x = Math.cos(a) * labelR;
-        const y = Math.sin(a) * labelR;
-        return `translate(${x},${y})`;
+      .attr("fill", "rgba(0,0,0,0.72)")
+      .attr("transform", (d,i) => {
+        const a = (i + 0.5) * angleStep - Math.PI/2;
+        const rr = R + 16;
+        return `translate(${Math.cos(a)*rr},${Math.sin(a)*rr})`;
       })
       .text(d => d);
-
-    // Labels de horas (apenas algumas para não poluir)
-    const hourTicks = horas.filter(h => (h === H0 || h === H1 || h % 2 === 0));
-    g.selectAll("text.hour")
-      .data(hourTicks)
-      .enter()
-      .append("text")
-      .attr("class", "hour")
-      .attr("text-anchor", "middle")
-      .attr("font-size", 10)
-      .attr("fill", "rgba(0,0,0,0.60)")
-      .attr("y", d => -(ring(String(d)) + ring.bandwidth()/2))
-      .text(d => `${String(d).padStart(2,"0")}:00`);
   }
 
   /**
-   * Gráfico B: Eficiência dos Profissionais (Bubble/Scatter) - Chart.js
-   * X = vagas total
-   * Y = % retorno
-   * Bolha = presença (nº de registros/dias)
+   * Gráfico B: Eficiência por Profissional (Bubble)
+   *  x = vagas totais
+   *  y = % retorno
+   *  r = quantidade de dias ofertados
    */
-  function gerarScatterProfissionais(dados) {
-    const canvas = document.getElementById("chartScatter");
+  function gerarEficienciaBubble(dados) {
+    const canvas = document.getElementById("chartEficiência");
     if (!canvas) return;
-    if (charts.scatter) charts.scatter.destroy();
+    if (charts.eficiencia) charts.eficiencia.destroy();
 
-    const byProf = {};
+    const profMap = {};
     dados.forEach(d => {
-      const prof = (d.profissional || "Sem nome").trim();
-      if (!byProf[prof]) byProf[prof] = { total: 0, ret: 0, n: 0 };
-      const v = Number(d.vagas) || 0;
+      const prof = (d.profissional || "(Sem nome)").trim();
+      if (!profMap[prof]) profMap[prof] = { total: 0, ret: 0, dias: new Set() };
 
-      byProf[prof].total += v;
-      byProf[prof].n += 1;
+      const v = Number(d.vagas) || 0;
+      profMap[prof].total += v;
 
       const campoProc = String(d.procedimento || "").toUpperCase().trim();
       const campoExame = String(d.exames || "").toUpperCase().trim();
-      if (campoProc.includes("RETORNO") || campoExame.includes("RETORNO")) byProf[prof].ret += v;
+      const isRet = campoProc.includes("RETORNO") || campoExame.includes("RETORNO");
+      if (isRet) profMap[prof].ret += v;
+
+      const diasSel = SisregUtils.extrairDias(d.dias_semana);
+      diasSel.forEach(di => profMap[prof].dias.add(di));
     });
 
-    const pontos = Object.entries(byProf).map(([prof, o]) => {
-      const perc = o.total > 0 ? Math.round((o.ret / o.total) * 100) : 0;
-      const r = Math.max(5, Math.min(18, Math.round(Math.sqrt(o.n) * 4)));
-      return { x: o.total, y: perc, r, _prof: prof, _n: o.n, _ret: o.ret };
-    }).sort((a,b)=>b.x-a.x);
+    const pontos = Object.entries(profMap).map(([prof, x]) => {
+      const perc = x.total > 0 ? Math.round((x.ret / x.total) * 100) : 0;
+      const r = Math.max(5, Math.min(18, x.dias.size * 4));
+      return { x: x.total, y: perc, r, _prof: prof, _total: x.total, _ret: x.ret, _dias: x.dias.size };
+    });
 
-    charts.scatter = new Chart(canvas, {
+    charts.eficiencia = new Chart(canvas, {
       type: "bubble",
       data: {
         datasets: [{
           label: "Profissionais",
           data: pontos,
-          backgroundColor: "rgba(33, 150, 243, 0.35)",
-          borderColor: "rgba(33, 150, 243, 0.85)",
-          borderWidth: 1.5
-        }]
-      },
-      options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        plugins: {
-          legend: { display: false },
-          tooltip: {
-            callbacks: {
-              label: (ctx) => {
-                const r = ctx.raw || {};
-                return `${r._prof} • ${ctx.parsed.x} vagas • ${ctx.parsed.y}% retorno • ${r._n} registros`;
-              }
-            }
-          }
-        },
-        scales: {
-          x: { title: { display: true, text: "Vagas ofertadas (total)" }, beginAtZero: true },
-          y: { title: { display: true, text: "% Retorno" }, min: 0, max: 100 }
-        }
-      }
-    });
-  }
-
-  /**
-   * Gráfico C: Radar da semana (distribuição por dia) - Chart.js
-   */
-  function gerarRadarSemana(dados) {
-    const canvas = document.getElementById("chartRadar");
-    if (!canvas) return;
-    if (charts.radar) charts.radar.destroy();
-
-    const dias = SISREG_CONFIG.DIAS_SEMANA;
-    const byDay = Object.fromEntries(dias.map(d => [d, 0]));
-
-    dados.forEach(d => {
-      const v = Number(d.vagas) || 0;
-      const diasSel = SisregUtils.extrairDias(d.dias_semana);
-      if (!diasSel || diasSel.length === 0) byDay["SEG"] += v;
-      else diasSel.forEach(di => { if (byDay[di] != null) byDay[di] += v; });
-    });
-
-    const labels = dias;
-    const valores = labels.map(d => byDay[d] || 0);
-
-    charts.radar = new Chart(canvas, {
-      type: "radar",
-      data: {
-        labels,
-        datasets: [{
-          label: "Distribuição",
-          data: valores,
-          backgroundColor: "rgba(76, 175, 80, 0.18)",
-          borderColor: "rgba(76, 175, 80, 0.85)",
-          borderWidth: 2,
-          pointRadius: 3
-        }]
-      },
-      options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        plugins: { legend: { display: false } },
-        scales: {
-          r: {
-            beginAtZero: true,
-            ticks: { display: false }
-          }
-        }
-      }
-    });
-  }
-
-  /**
-   * Gráfico D: Sankey (Dia → Tipo → Procedimento Top) - D3 Sankey
-   */
-  function gerarSankeyFluxo(dados) {
-    const el = document.getElementById("chartSankey");
-    if (!el || typeof d3 === "undefined" || typeof d3.sankey === "undefined") return;
-
-    const svg = d3.select(el);
-    svg.selectAll("*").remove();
-
-    const width = el.clientWidth || 900;
-    const height = el.clientHeight || 360;
-    svg.attr("viewBox", `0 0 ${width} ${height}`);
-
-    // Top procedimentos para não virar uma sopa de nós
-    const byProc = {};
-    dados.forEach(d => {
-      const k = (d.procedimento || "OUTROS").trim();
-      byProc[k] = (byProc[k] || 0) + (Number(d.vagas) || 0);
-    });
-    const topProc = new Set(
-      Object.entries(byProc).sort((a,b)=>b[1]-a[1]).slice(0, 8).map(x=>x[0])
-    );
-
-    const nodes = [];
-    const nodeIndex = new Map();
-    const linksAgg = new Map();
-
-    function addNode(name) {
-      if (!nodeIndex.has(name)) {
-        nodeIndex.set(name, nodes.length);
-        nodes.push({ name });
-      }
-      return nodeIndex.get(name);
-    }
-
-    function addLink(src, tgt, value) {
-      const key = `${src}→${tgt}`;
-      linksAgg.set(key, (linksAgg.get(key) || 0) + value);
-    }
-
-    dados.forEach(d => {
-      const diasSel = SisregUtils.extrairDias(d.dias_semana);
-      const dia = (diasSel && diasSel.length ? diasSel[0] : "SEG"); // simplifica 1º dia (mantém leitura)
-      const v = Number(d.vagas) || 0;
-
-      const campoProc = String(d.procedimento || "").toUpperCase().trim();
-      const campoExame = String(d.exames || "").toUpperCase().trim();
-      const tipo = (campoProc.includes("RETORNO") || campoExame.includes("RETORNO")) ? "RETORNO" : "1ª VEZ";
-
-      const proc = (d.procedimento || "OUTROS").trim();
-      const procNome = topProc.has(proc) ? proc : "OUTROS";
-
-      const nDia = addNode(dia);
-      const nTipo = addNode(tipo);
-      const nProc = addNode(procNome);
-
-      addLink(nDia, nTipo, v);
-      addLink(nTipo, nProc, v);
-    });
-
-    const links = Array.from(linksAgg.entries()).map(([k, value]) => {
-      const [s, t] = k.split("→");
-      return { source: Number(s), target: Number(t), value };
-    });
-
-    const sankey = d3.sankey()
-      .nodeWidth(18)
-      .nodePadding(10)
-      .extent([[10, 10], [width - 10, height - 10]]);
-
-    const graph = sankey({
-      nodes: nodes.map(d => ({ ...d })),
-      links: links.map(d => ({ ...d }))
-    });
-
-    // Links
-    svg.append("g")
-      .attr("fill", "none")
-      .attr("stroke-opacity", 0.35)
-      .selectAll("path")
-      .data(graph.links)
-      .enter()
-      .append("path")
-      .attr("d", d3.sankeyLinkHorizontal())
-      .attr("stroke", "rgba(33, 150, 243, 0.9)")
-      .attr("stroke-width", d => Math.max(1, d.width))
-      .append("title")
-      .text(d => `${graph.nodes[d.source.index].name} → ${graph.nodes[d.target.index].name}: ${d.value} vagas`);
-
-    // Nodes
-    const nodeG = svg.append("g")
-      .selectAll("g")
-      .data(graph.nodes)
-      .enter()
-      .append("g");
-
-    nodeG.append("rect")
-      .attr("x", d => d.x0)
-      .attr("y", d => d.y0)
-      .attr("height", d => d.y1 - d.y0)
-      .attr("width", d => d.x1 - d.x0)
-      .attr("rx", 6)
-      .attr("fill", "rgba(76, 175, 80, 0.75)")
-      .append("title")
-      .text(d => `${d.name}: ${Math.round(d.value || 0)} vagas`);
-
-    nodeG.append("text")
-      .attr("x", d => d.x0 < width / 2 ? d.x1 + 6 : d.x0 - 6)
-      .attr("y", d => (d.y0 + d.y1) / 2)
-      .attr("dy", "0.35em")
-      .attr("text-anchor", d => d.x0 < width / 2 ? "start" : "end")
-      .attr("font-size", 11)
-      .attr("fill", "rgba(0,0,0,0.75)")
-      .text(d => d.name);
-  }
-
-  /**
-   * Gráfico E: Mapa de risco (bolhas) - Chart.js
-   * Ideia: dia×hora com "risco" baseado em:
-   * - baixa oferta (quanto menor, maior risco)
-   * - maior proporção de retorno naquele slot
-   */
-  function gerarMapaRisco(dados) {
-    const canvas = document.getElementById("chartRisco");
-    if (!canvas) return;
-    if (charts.risco) charts.risco.destroy();
-
-    const dias = SISREG_CONFIG.DIAS_SEMANA;
-    const idxDia = Object.fromEntries(dias.map((d,i)=>[d,i]));
-
-    const H0 = 7, H1 = 18;
-    const slots = new Map();
-    dados.forEach(d => {
-      const diasSel = SisregUtils.extrairDias(d.dias_semana);
-      const h0 = parseInt(String(SisregUtils.formatarHora(d.hora_inicio) || "0").split(":")[0] || "0", 10);
-      const hh = Math.max(H0, Math.min(H1, isFinite(h0) ? h0 : H0));
-      const v = Number(d.vagas) || 0;
-
-      const campoProc = String(d.procedimento || "").toUpperCase().trim();
-      const campoExame = String(d.exames || "").toUpperCase().trim();
-      const isRet = (campoProc.includes("RETORNO") || campoExame.includes("RETORNO"));
-
-      (diasSel.length ? diasSel : ["SEG"]).forEach(di => {
-        const key = `${di}|${hh}`;
-        if (!slots.has(key)) slots.set(key, { dia: di, h: hh, total: 0, ret: 0 });
-        const s = slots.get(key);
-        s.total += v;
-        if (isRet) s.ret += v;
-      });
-    });
-
-    let maxTotal = 1;
-    slots.forEach(s => { if (s.total > maxTotal) maxTotal = s.total; });
-
-    const pontos = [];
-    slots.forEach(s => {
-      const retPerc = s.total > 0 ? (s.ret / s.total) : 0;
-      // risco: baixa oferta + alto retorno
-      const baixaOferta = 1 - (s.total / maxTotal);
-      const risco = Math.min(1, (baixaOferta * 0.65) + (retPerc * 0.35));
-
-      pontos.push({
-        x: idxDia[s.dia],
-        y: s.h,
-        r: Math.max(5, Math.round(6 + risco * 14)),
-        _risco: risco,
-        _total: s.total,
-        _ret: Math.round(retPerc * 100),
-        _dia: s.dia
-      });
-    });
-
-    charts.risco = new Chart(canvas, {
-      type: "bubble",
-      data: {
-        datasets: [{
-          label: "Risco",
-          data: pontos,
-          backgroundColor: (ctx) => {
-            const raw = ctx.raw || {};
-            const r = raw._risco || 0;
-            // verde -> amarelo -> vermelho
-            const R = Math.round(80 + r * 160);
-            const G = Math.round(200 - r * 140);
-            const B = 90;
-            return `rgba(${R},${G},${B},0.65)`;
-          },
-          borderColor: "rgba(0,0,0,0.08)",
+          backgroundColor: "rgba(253,187,45,0.55)",
+          borderColor: "rgba(0,0,0,0.10)",
           borderWidth: 1
         }]
       },
@@ -599,33 +331,238 @@ document.addEventListener("DOMContentLoaded", async () => {
             callbacks: {
               label: (ctx) => {
                 const r = ctx.raw || {};
-                const dia = r._dia || "";
-                const hh = String(ctx.parsed.y).padStart(2,"0");
-                const riscoPct = Math.round((r._risco || 0) * 100);
-                return `${dia} ${hh}:00 • risco ${riscoPct}% • ${r._total} vagas • ${r._ret}% retorno`;
+                return `${r._prof} • total ${r._total} • retorno ${r._ret} (${r.y}%) • dias ${r._dias}`;
               }
             }
           }
         },
         scales: {
-          x: {
-            min: -0.5,
-            max: 6.5,
-            ticks: { callback: (v) => dias[v] || "" },
-            grid: { display: false }
-          },
-          y: {
-            title: { display: true, text: "Hora (início)" },
-            ticks: { callback: (v) => `${String(v).padStart(2,"0")}:00` }
-          }
+          x: { title: { display: true, text: "Vagas totais" }, grid: { color: "rgba(0,0,0,0.06)" } },
+          y: { title: { display: true, text: "% Retorno" }, max: 100, beginAtZero: true, grid: { color: "rgba(0,0,0,0.06)" } }
         }
       }
     });
   }
 
   /**
-   * Insights Automáticos (mantido, mas MELHORADO)
-   * - mais acionável e mais “gerencial”
+   * Gráfico C: Stream por horário (1ª vez vs retorno)
+   */
+  function gerarStreamHorario(dados) {
+    const svgEl = document.getElementById("chartStream");
+    if (!svgEl || typeof d3 === "undefined") return;
+
+    const svg = d3.select(svgEl);
+    svg.selectAll("*").remove();
+
+    const w = svgEl.clientWidth || 520;
+    const h = svgEl.clientHeight || 320;
+    svg.attr("viewBox", `0 0 ${w} ${h}`);
+
+    const hMin = 7;
+    const hMax = 18;
+    const hours = d3.range(hMin, hMax + 1);
+
+    const byH = {};
+    hours.forEach(hr => byH[hr] = { hr, primeira: 0, retorno: 0 });
+
+    dados.forEach(d => {
+      const hr = parseInt(String(SisregUtils.formatarHora(d.hora_inicio) || "0").split(":")[0] || "0", 10);
+      if (byH[hr] == null) return;
+
+      const v = Number(d.vagas) || 0;
+      const campoProc = String(d.procedimento || "").toUpperCase().trim();
+      const campoExame = String(d.exames || "").toUpperCase().trim();
+      const isRet = campoProc.includes("RETORNO") || campoExame.includes("RETORNO");
+
+      if (isRet) byH[hr].retorno += v;
+      else byH[hr].primeira += v;
+    });
+
+    const data = hours.map(hr => byH[hr]);
+
+    const keys = ["primeira", "retorno"];
+    const stack = d3.stack()
+      .keys(keys)
+      .offset(d3.stackOffsetWiggle)
+      .order(d3.stackOrderNone);
+
+    const series = stack(data);
+
+    const x = d3.scaleLinear()
+      .domain([hMin, hMax])
+      .range([40, w - 20]);
+
+    const y = d3.scaleLinear()
+      .domain([
+        d3.min(series, s => d3.min(s, d => d[0])),
+        d3.max(series, s => d3.max(s, d => d[1]))
+      ])
+      .nice()
+      .range([h - 30, 20]);
+
+    const area = d3.area()
+      .x((d,i) => x(data[i].hr))
+      .y0(d => y(d[0]))
+      .y1(d => y(d[1]))
+      .curve(d3.curveCatmullRom.alpha(0.4));
+
+    const colors = {
+      primeira: "rgba(46, 204, 113, 0.55)",
+      retorno: "rgba(231, 76, 60, 0.55)"
+    };
+
+    svg.append("g")
+      .selectAll("path")
+      .data(series)
+      .enter()
+      .append("path")
+      .attr("d", area)
+      .attr("fill", s => colors[s.key] || "rgba(0,0,0,0.12)")
+      .attr("stroke", "rgba(0,0,0,0.08)")
+      .attr("stroke-width", 1)
+      .on("mousemove", (event, s) => {
+        showTip(`<strong>${s.key === "primeira" ? "1ª Vez" : "Retorno"}</strong><br/>Distribuição por horário`, event.clientX, event.clientY);
+      })
+      .on("mouseleave", hideTip);
+
+    // Eixo X (horas)
+    const axisX = d3.axisBottom(x).ticks(hMax - hMin).tickFormat(d => String(d).padStart(2,"0")+":00");
+    svg.append("g")
+      .attr("transform", `translate(0,${h-30})`)
+      .call(axisX)
+      .call(g => g.selectAll("text").attr("font-size", 10).attr("opacity", 0.8))
+      .call(g => g.selectAll("path,line").attr("stroke", "rgba(0,0,0,0.15)"));
+
+    // Label
+    svg.append("text")
+      .attr("x", 40)
+      .attr("y", 16)
+      .attr("font-size", 11)
+      .attr("fill", "rgba(0,0,0,0.7)")
+      .text("Horários (início) — forma indica concentração");
+  }
+
+  /**
+   * Gráfico D: Sankey Dia → Profissional → Tipo
+   * (Top N profissionais; resto vai para “Outros”)
+   */
+  function gerarSankey(dados) {
+    const svgEl = document.getElementById("chartSankey");
+    if (!svgEl || typeof d3 === "undefined" || typeof d3.sankey !== "function") return;
+
+    const svg = d3.select(svgEl);
+    svg.selectAll("*").remove();
+
+    const w = svgEl.clientWidth || 520;
+    const h = svgEl.clientHeight || 320;
+    svg.attr("viewBox", `0 0 ${w} ${h}`);
+
+    const dias = SISREG_CONFIG.DIAS_SEMANA || ["DOM","SEG","TER","QUA","QUI","SEX","SAB"];
+
+    // Top profissionais
+    const byProf = {};
+    dados.forEach(d => {
+      const p = (d.profissional || "(Sem nome)").trim();
+      byProf[p] = (byProf[p] || 0) + (Number(d.vagas) || 0);
+    });
+    const topN = 12;
+    const topProfs = Object.entries(byProf).sort((a,b)=>b[1]-a[1]).slice(0, topN).map(x=>x[0]);
+    const setTop = new Set(topProfs);
+
+    // Nós / Links
+    const nodeMap = new Map();
+    const nodes = [];
+    const linksMap = new Map(); // key -> value
+
+    const getNode = (name) => {
+      if (!nodeMap.has(name)) {
+        nodeMap.set(name, nodes.length);
+        nodes.push({ name });
+      }
+      return nodeMap.get(name);
+    };
+
+    const addLink = (s, t, v) => {
+      const key = `${s}=>${t}`;
+      linksMap.set(key, (linksMap.get(key) || 0) + v);
+    };
+
+    dados.forEach(d => {
+      const diasSel = SisregUtils.extrairDias(d.dias_semana);
+      const dia = diasSel[0] || "SEG";
+      const profRaw = (d.profissional || "(Sem nome)").trim();
+      const prof = setTop.has(profRaw) ? profRaw : "Outros";
+      const v = Number(d.vagas) || 0;
+
+      const campoProc = String(d.procedimento || "").toUpperCase().trim();
+      const campoExame = String(d.exames || "").toUpperCase().trim();
+      const tipo = (campoProc.includes("RETORNO") || campoExame.includes("RETORNO")) ? "Retorno" : "1ª Vez";
+
+      addLink(dia, prof, v);
+      addLink(prof, tipo, v);
+    });
+
+    const links = Array.from(linksMap.entries()).map(([k, value]) => {
+      const [s, t] = k.split("=>");
+      return { source: getNode(s), target: getNode(t), value };
+    });
+
+    // Layout Sankey
+    const sankey = d3.sankey()
+      .nodeWidth(16)
+      .nodePadding(10)
+      .extent([[10, 10], [w - 10, h - 10]]);
+
+    const graph = sankey({
+      nodes: nodes.map(d => Object.assign({}, d)),
+      links: links.map(d => Object.assign({}, d))
+    });
+
+    // Links
+    svg.append("g")
+      .attr("fill", "none")
+      .selectAll("path")
+      .data(graph.links)
+      .enter()
+      .append("path")
+      .attr("d", d3.sankeyLinkHorizontal())
+      .attr("stroke", "rgba(253,187,45,0.55)")
+      .attr("stroke-width", d => Math.max(1, d.width))
+      .attr("opacity", 0.85)
+      .on("mousemove", (event, d) => {
+        const s = graph.nodes[d.source.index]?.name || "";
+        const t = graph.nodes[d.target.index]?.name || "";
+        showTip(`<strong>${s}</strong> → <strong>${t}</strong><br/>Vagas: <strong>${d.value}</strong>`, event.clientX, event.clientY);
+      })
+      .on("mouseleave", hideTip);
+
+    // Nodes
+    const node = svg.append("g")
+      .selectAll("g")
+      .data(graph.nodes)
+      .enter()
+      .append("g");
+
+    node.append("rect")
+      .attr("x", d => d.x0)
+      .attr("y", d => d.y0)
+      .attr("height", d => d.y1 - d.y0)
+      .attr("width", d => d.x1 - d.x0)
+      .attr("fill", "rgba(26,42,108,0.75)")
+      .attr("stroke", "rgba(0,0,0,0.10)");
+
+    node.append("text")
+      .attr("x", d => (d.x0 < w/2 ? d.x1 + 6 : d.x0 - 6))
+      .attr("y", d => (d.y0 + d.y1)/2)
+      .attr("dy", "0.35em")
+      .attr("text-anchor", d => (d.x0 < w/2 ? "start" : "end"))
+      .attr("font-size", 10)
+      .attr("fill", "rgba(0,0,0,0.72)")
+      .text(d => d.name);
+  }
+
+  /**
+   * Insights Automáticos — mantido (melhorado)
    */
   function gerarInsights(dados) {
     const ul = document.getElementById("listaInsights");
@@ -636,56 +573,66 @@ document.addEventListener("DOMContentLoaded", async () => {
       ul.innerHTML = "<li>Nenhum dado disponível para análise.</li>";
       return;
     }
-
+    
     const totalVagas = dados.reduce((s, d) => s + (Number(d.vagas) || 0), 0);
 
-    // Dia campeão
-    const byDay = Object.fromEntries(SISREG_CONFIG.DIAS_SEMANA.map(d => [d, 0]));
-    dados.forEach(d => {
-      const v = Number(d.vagas) || 0;
-      const diasSel = SisregUtils.extrairDias(d.dias_semana);
-      if (!diasSel || diasSel.length === 0) byDay["SEG"] += v;
-      else diasSel.forEach(di => { if (byDay[di] != null) byDay[di] += v; });
-    });
-
-    let topDay = SISREG_CONFIG.DIAS_SEMANA[0];
-    SISREG_CONFIG.DIAS_SEMANA.forEach(di => { if (byDay[di] > byDay[topDay]) topDay = di; });
-    const percTopDay = totalVagas > 0 ? Math.round((byDay[topDay] / totalVagas) * 100) : 0;
-
-    // Hora campeã
+    // Concentração por dia e por hora
+    const dias = SISREG_CONFIG.DIAS_SEMANA || ["DOM","SEG","TER","QUA","QUI","SEX","SAB"];
+    const byDay = Object.fromEntries(dias.map(d=>[d,0]));
     const byHour = {};
     for (let h = 7; h <= 18; h++) byHour[h] = 0;
-    dados.forEach(d => {
-      const h0 = parseInt(String(SisregUtils.formatarHora(d.hora_inicio) || "0").split(":")[0] || "0", 10);
-      const hh = Math.max(7, Math.min(18, isFinite(h0) ? h0 : 7));
-      byHour[hh] += Number(d.vagas) || 0;
-    });
-    let topHour = 7;
-    Object.keys(byHour).forEach(h => { if (byHour[h] > byHour[topHour]) topHour = Number(h); });
-    const percTopHour = totalVagas > 0 ? Math.round((byHour[topHour] / totalVagas) * 100) : 0;
 
-    // Concentração por profissionais (Top 4)
+    // Profissionais
     const byProf = {};
-    dados.forEach(d => {
-      const p = (d.profissional || "(Sem nome)").trim();
-      byProf[p] = (byProf[p] || 0) + (Number(d.vagas) || 0);
-    });
-    const profOrdenado = Object.entries(byProf).sort((a,b)=>b[1]-a[1]);
-    const top4 = profOrdenado.slice(0,4);
-    const top4Soma = top4.reduce((s, x)=>s + x[1], 0);
-    const percTop4 = totalVagas > 0 ? Math.round((top4Soma / totalVagas) * 100) : 0;
-
-    // Retorno %
+    // Retorno
     let retornoV = 0;
+
     dados.forEach(d => {
+      const v = Number(d.vagas) || 0;
+
+      // dias
+      const diasSel = SisregUtils.extrairDias(d.dias_semana);
+      if (diasSel.length === 0) byDay["SEG"] += v;
+      else diasSel.forEach(di => { if (byDay[di] != null) byDay[di] += v; });
+
+      // hora
+      const h0 = parseInt(String(SisregUtils.formatarHora(d.hora_inicio) || "0").split(":")[0] || "0", 10);
+      if (byHour[h0] != null) byHour[h0] += v;
+
+      // prof
+      const p = d.profissional || "(Sem nome)";
+      byProf[p] = (byProf[p] || 0) + v;
+
+      // retorno
       const campoProc = String(d.procedimento || "").toUpperCase().trim();
       const campoExame = String(d.exames || "").toUpperCase().trim();
       const isRet = campoProc.includes("RETORNO") || campoExame.includes("RETORNO");
-      if (isRet) retornoV += (Number(d.vagas) || 0);
+      if (isRet) retornoV += v;
     });
+
+    // Top day
+    let topDay = dias[0];
+    dias.forEach(di => { if (byDay[di] > byDay[topDay]) topDay = di; });
+    const percTopDay = totalVagas > 0 ? Math.round((byDay[topDay] / totalVagas) * 100) : 0;
+
+    // Top hour
+    let topHour = 7;
+    for (let h = 7; h <= 18; h++) if (byHour[h] > byHour[topHour]) topHour = h;
+
+    // Concentração em profissionais (HHI simplificado)
+    const profVals = Object.values(byProf);
+    const hhi = totalVagas > 0
+      ? Math.round(profVals.reduce((s, v)=> s + Math.pow(v/totalVagas, 2), 0) * 1000)
+      : 0; // 0–1000 aprox (quanto maior, mais concentrado)
+
+    const profOrdenado = Object.entries(byProf).sort((a,b)=>b[1]-a[1]);
+    const top3 = profOrdenado.slice(0,3);
+    const top3Sum = top3.reduce((s, x)=>s + x[1], 0);
+    const percTop3 = totalVagas > 0 ? Math.round((top3Sum / totalVagas) * 100) : 0;
+
     const percRet = totalVagas > 0 ? Math.round((retornoV / totalVagas) * 100) : 0;
 
-    // Procedimento líder
+    // Procedimento campeão
     const byProc = {};
     dados.forEach(d => {
       const k = (d.procedimento || "OUTROS").trim();
@@ -693,24 +640,19 @@ document.addEventListener("DOMContentLoaded", async () => {
     });
     const procTop = Object.entries(byProc).sort((a,b)=>b[1]-a[1])[0];
     const procNome = procTop ? procTop[0] : "-";
-    const procV = procTop ? procTop[1] : 0;
-    const procPerc = totalVagas > 0 ? Math.round((procV / totalVagas) * 100) : 0;
 
-    // Recomendações (heurísticas simples, mas úteis)
-    const alertaConcentracao = percTop4 >= 60 ? "🔴 Alta concentração: considerar redistribuir oferta entre mais profissionais." :
-                              percTop4 >= 45 ? "🟠 Concentração moderada: monitorar dependência de poucos profissionais." :
-                              "🟢 Concentração saudável.";
-
-    const alertaRetorno = percRet >= 50 ? "🟠 Retorno muito alto: pode estar comprimindo 1ª vez (entrada)." :
-                         percRet >= 30 ? "🟢 Retorno em patamar esperado." :
-                         "🟡 Retorno baixo: avaliar se há suboferta de retornos.";
+    // Recomendação simples
+    let recomendacao = "Distribuição saudável.";
+    if (percTop3 >= 60 || hhi >= 180) recomendacao = "⚠️ Alta concentração: redistribua oferta entre profissionais/dias.";
+    if (percRet >= 55) recomendacao = "⚠️ Retorno alto: avalie reservar janelas específicas para 1ª vez.";
 
     ul.innerHTML = `
-      <li>📌 <strong>${topDay}</strong> concentra <strong>${percTopDay}%</strong> das vagas.</li>
-      <li>⏱️ Pico em <strong>${String(topHour).padStart(2,"0")}:00</strong> com <strong>${percTopHour}%</strong> das vagas.</li>
-      <li>👥 Top 4 profissionais somam <strong>${percTop4}%</strong> da oferta. <em>${alertaConcentracao}</em></li>
-      <li>🔁 Retornos representam <strong>${percRet}%</strong> das vagas. <em>${alertaRetorno}</em></li>
-      <li>🏆 Procedimento líder: <strong>${procNome}</strong> (<strong>${procPerc}%</strong>).</li>
+      <li>📌 <strong>${topDay}</strong> concentra <strong>${percTopDay}%</strong> das vagas ofertadas.</li>
+      <li>🕒 Pico de oferta em <strong>${String(topHour).padStart(2,"0")}:00</strong>.</li>
+      <li>👥 <strong>Top 3 profissionais</strong> respondem por <strong>${percTop3}%</strong> das vagas (HHI≈<strong>${hhi}</strong>).</li>
+      <li>🔁 <strong>Retornos</strong> representam <strong>${percRet}%</strong> das vagas.</li>
+      <li>🏆 Procedimento líder: <strong>${procNome}</strong>.</li>
+      <li>🧭 Recomendações: <strong>${recomendacao}</strong></li>
     `;
   }
   
