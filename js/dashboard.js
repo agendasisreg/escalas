@@ -261,7 +261,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     dados.forEach(d => {
       const h = SisregUtils.formatarHora(d.hora_inicio);
       if (horas[h] !== undefined) {
-        horas[h] += Number(d.v) || 0;
+        horas[h] += Number(d.vagas) || 0;
       }
     });
     
@@ -482,7 +482,7 @@ document.addEventListener("DOMContentLoaded", async () => {
                 const value = ctx.parsed || 0;
                 const perc = ctx.dataset.data.reduce((a, b) => a + b, 0);
                 const percentual = perc > 0 ? Math.round((value / perc) * 100) : 0;
-                return `${label}: ${value} vagasual}%)`;
+                return `${label}: ${value} vagas (${percentual}%)`;
               }
             }
           }
