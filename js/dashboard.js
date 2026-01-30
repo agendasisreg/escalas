@@ -353,48 +353,66 @@ document.addEventListener("DOMContentLoaded", async () => {
   function gerarStreamHorario(dados) {
     const svgEl = document.getElementById("chartStream");
     if (!svgEl || typeof d3 === "undefined") return;
-
+  
     const svg = d3.select(svgEl);
     svg.selectAll("*").remove();
-
+  
     const w = svgEl.clientWidth || 520;
     const h = svgEl.clientHeight || 320;
     svg.attr("viewBox", `0 0 ${w} ${h}`);
-
+  
     const hMin = 7;
     const hMax = 18;
     const hours = d3.range(hMin, hMax + 1);
-
+  
+    // Inicializa estrutura
     const byH = {};
-    hours.forEach(hr => byH[hr] = { hr, primeira: 0, retorno: 0 });
-
-    dados.forEach(d => {
-      const hr = parseInt(String(SisregUtils.formatarHora(d.hora_inicio) || "0").split(":")[0] || "0", 10);
-      if (byH[hr] == null) return;
-
-      const v = Number(d.vagas) || 0;
-      const campoProc = String(d.procedimento || "").toUpperCase().trim();
-      const campoExame = String(d.exames || "").toUpperCase().trim();
-      const isRet = campoProc.includes("RETORNO") || campoExame.includes("RETORNO");
-
-      if (isRet) byH[hr].retorno += v;
-      else byH[hr].primeira += v;
+    hours.forEach(hr => {
+      byH[hr] = { hr, primeira: 0, retorno: 0 };
     });
-
+  
+    dados.forEach(d => {
+      const inicio = parseInt(
+        String(SisregUtils.formatarHora(d.hora_inicio) || "0").split(":")[0],
+        10
+      );
+      const fim = parseInt(
+        String(SisregUtils.formatarHora(d.hora_fim) || "0").split(":")[0],
+        10
+      );
+  
+      if (!inicio || !fim || fim <= inicio) return;
+  
+      const totalHoras = fim - inicio;
+      const vagasPorHora = (Number(d.vagas) || 0) / totalHoras;
+  
+      const campoProc = String(d.procedimento || "").toUpperCase();
+      const campoExame = String(d.exames || "").toUpperCase();
+      const isRet = campoProc.includes("RETORNO") || campoExame.includes("RETORNO");
+  
+      for (let hr = inicio; hr < fim; hr++) {
+        if (byH[hr]) {
+          if (isRet) byH[hr].retorno += vagasPorHora;
+          else byH[hr].primeira += vagasPorHora;
+        }
+      }
+    });
+  
     const data = hours.map(hr => byH[hr]);
-
+  
     const keys = ["primeira", "retorno"];
+  
     const stack = d3.stack()
       .keys(keys)
       .offset(d3.stackOffsetWiggle)
-      .order(d3.stackOrderNone);
-
+      .order(d3.stackOrderInsideOut);
+  
     const series = stack(data);
-
+  
     const x = d3.scaleLinear()
       .domain([hMin, hMax])
       .range([40, w - 20]);
-
+  
     const y = d3.scaleLinear()
       .domain([
         d3.min(series, s => d3.min(s, d => d[0])),
@@ -402,47 +420,37 @@ document.addEventListener("DOMContentLoaded", async () => {
       ])
       .nice()
       .range([h - 30, 20]);
-
+  
     const area = d3.area()
-      .x((d,i) => x(data[i].hr))
+      .x((d, i) => x(data[i].hr))
       .y0(d => y(d[0]))
       .y1(d => y(d[1]))
-      .curve(d3.curveCatmullRom.alpha(0.4));
-
+      .curve(d3.curveCatmullRom.alpha(0.5));
+  
     const colors = {
       primeira: "rgba(46, 204, 113, 0.55)",
       retorno: "rgba(231, 76, 60, 0.55)"
     };
-
+  
     svg.append("g")
       .selectAll("path")
       .data(series)
       .enter()
       .append("path")
       .attr("d", area)
-      .attr("fill", s => colors[s.key] || "rgba(0,0,0,0.12)")
+      .attr("fill", s => colors[s.key])
       .attr("stroke", "rgba(0,0,0,0.08)")
-      .attr("stroke-width", 1)
-      .on("mousemove", (event, s) => {
-        showTip(`<strong>${s.key === "primeira" ? "1ª Vez" : "Retorno"}</strong><br/>Distribuição por horário`, event.clientX, event.clientY);
-      })
-      .on("mouseleave", hideTip);
-
-    // Eixo X (horas)
-    const axisX = d3.axisBottom(x).ticks(hMax - hMin).tickFormat(d => String(d).padStart(2,"0")+":00");
+      .attr("stroke-width", 1);
+  
+    // Eixo X
+    const axisX = d3.axisBottom(x)
+      .ticks(hMax - hMin)
+      .tickFormat(d => String(d).padStart(2, "0") + ":00");
+  
     svg.append("g")
-      .attr("transform", `translate(0,${h-30})`)
+      .attr("transform", `translate(0,${h - 30})`)
       .call(axisX)
-      .call(g => g.selectAll("text").attr("font-size", 10).attr("opacity", 0.8))
-      .call(g => g.selectAll("path,line").attr("stroke", "rgba(0,0,0,0.15)"));
-
-    // Label
-    svg.append("text")
-      .attr("x", 40)
-      .attr("y", 16)
-      .attr("font-size", 11)
-      .attr("fill", "rgba(0,0,0,0.7)")
-      .text("Horários (início) — forma indica concentração");
+      .call(g => g.selectAll("text").attr("font-size", 10));
   }
 
   /**
