@@ -4,115 +4,196 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>Dashboard | Agenda SISREG</title>
-
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="css/theme.css">
 <link rel="stylesheet" href="css/style.css">
-
-<!-- LIBS -->
+<!-- Bibliotecas externas -->
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<!-- ✅ ADIÇÃO: D3 + Sankey (somente para os NOVOS gráficos) -->
 <script src="https://d3js.org/d3.v7.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/d3-sankey@0.12.3/dist/d3-sankey.min.js"></script>
+
 <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
-
 <style>
+/* Estilos adicionais para espaçamento */
 .dashboard-grid {
-  margin-top: 30px;
+  margin-top: 30px; /* Espaçamento entre KPIs e gráficos */
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(420px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
   gap: 24px;
 }
-.card.full-width { grid-column: 1 / -1; }
 
-.score-ia {
-  font-size: 48px;
-  font-weight: 800;
-  text-align: center;
+.card.full-width {
+  grid-column: 1 / -1;
 }
-.score-label {
-  text-align: center;
-  margin-top: 6px;
-  opacity: .85;
+
+/* Botão toggle dentro do card Insights */
+#cardInsights .card-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 10px;
+}
+
+#cardInsights .card-head h3 {
+  margin: 0;
+}
+
+/* Tabela oculta por padrão */
+#secTabela {
+  display: none;
+}
+
+/* [CORREÇÃO] Posicionamento dos botões na margem direita */
+.header-btns {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+/* ✅ ADIÇÃO: pequenos ajustes só para os SVGs dos novos gráficos */
+svg.chart-svg {
+  width: 100%;
+  height: 360px;
+  display: block;
 }
 </style>
 </head>
-
 <body>
-
+<!-- HEADER -->
 <header class="dash-header">
+  <!-- Elementos decorativos -->
+  <div class="header-decorative circle-1"></div>
+  <div class="header-decorative circle-2"></div>
+  <div class="header-decorative circle-3"></div>
+    
   <div class="unit-info">
-    <h1 id="txtUnidade">Carregando...</h1>
+    <h1 id="txtUnidade">Carregando unidade...</h1>
     <div class="gradient-line"></div>
-    <p>Painel Gerencial Inteligente • SISREG</p>
+    <p>Painel Gerencial de Escalas • <strong>SISREG Amazonas</strong></p>
   </div>
 
-  <div class="header-btns">
-    <button id="btnSincronizar" class="btn-main">🔄 Sincronizar</button>
-    <button id="btnExportarPDF" class="btn-main">📄 PDF</button>
-    <button id="btnLogout" class="btn-main">Sair</button>
+  <div style="display:flex;justify-content:space-between;align-items:center;position:relative;z-index:2;">
+    <div class="header-btns">
+      <button id="btnSincronizar" class="btn-main btn-sync">🔄 Sincronizar</button>
+      <button id="btnExportarPDF" class="btn-main">📄 Exportar PDF</button>
+      <a href="escalas.html" style="text-decoration:none;">
+      <button class="btn-main btn-new">➕ Nova Escala</button>
+      </a>
+      <button id="btnLogout" class="btn-main btn-logout">Sair</button>
+    </div>
   </div>
 </header>
 
+<!-- FILTRO -->
 <section class="filter-section">
-<label>Mês de Vigência:</label>
+<label for="filtroMes">Filtrar por Mês de Vigência:</label>
 <select id="filtroMes">
-<option value="todos">Todos</option>
-<option value="01">Jan</option><option value="02">Fev</option><option value="03">Mar</option>
-<option value="04">Abr</option><option value="05">Mai</option><option value="06">Jun</option>
-<option value="07">Jul</option><option value="08">Ago</option><option value="09">Set</option>
-<option value="10">Out</option><option value="11">Nov</option><option value="12">Dez</option>
+<option value="todos">Mostrar Todos</option>
+<option value="01">Janeiro</option><option value="02">Fevereiro</option><option value="03">Março</option>
+<option value="04">Abril</option><option value="05">Maio</option><option value="06">Junho</option>
+<option value="07">Julho</option><option value="08">Agosto</option><option value="09">Setembro</option>
+<option value="10">Outubro</option><option value="11">Novembro</option><option value="12">Dezembro</option>
 </select>
 </section>
 
+<!-- ÁREA DO DASHBOARD (usada no PDF) -->
 <main class="container" id="dashboardArea">
-
-<!-- KPIs ORIGINAIS (INTACTOS) -->
+<!-- KPIs - AGORA COM 4 CARDS -->
 <section class="kpi-container">
-  <div class="kpi-card"><h3>Total de Vagas</h3><p id="kpiVagas">0</p></div>
-  <div class="kpi-card"><h3>% Retorno</h3><p id="kpiRetorno">0%</p></div>
-  <div class="kpi-card"><h3>Profissionais</h3><p id="kpiProfissionais">0</p></div>
-  <div class="kpi-card"><h3>Procedimentos</h3><p id="kpiProcedimentos">0</p></div>
+<div class="kpi-card">
+<h3>Total de Vagas</h3>
+<p id="kpiVagas">0</p>
+</div>
+<div class="kpi-card">
+<h3>% Vagas Retorno</h3>
+<p id="kpiRetorno">0%</p>
+</div>
+<div class="kpi-card">
+<h3>Profissionais</h3>
+<p id="kpiProfissionais">0</p>
+</div>
+<div class="kpi-card">
+<h3>Procs. Únicos</h3>
+<p id="kpiProcedimentos">0</p>
+</div>
 </section>
 
+<!-- GRID DE GRÁFICOS -->
 <section class="dashboard-grid">
 
-<div class="card">
-  <h3>🧠 Score Inteligente da Agenda</h3>
-  <div id="scoreIA" class="score-ia">0</div>
-  <div id="scoreLabel" class="score-label"></div>
-</div>
+  <!-- ✅ SUBSTITUIÇÃO: removi todos os gráficos antigos e coloquei novos -->
+  <div class="card full-width">
+    <h3>🧿 Mapa Radial de Oferta (Dia × Hora)</h3>
+    <svg id="chartRadial" class="chart-svg"></svg>
+  </div>
 
-<div class="card">
-  <h3>⚖️ Eficiência dos Profissionais</h3>
-  <canvas id="chartScatter"></canvas>
-</div>
+  <div class="card">
+    <h3>⚖️ Eficiência dos Profissionais (Vagas × % Retorno)</h3>
+    <canvas id="chartScatter"></canvas>
+  </div>
 
-<div class="card">
-  <h3>🧭 Distribuição da Oferta (Radar)</h3>
-  <canvas id="chartRadar"></canvas>
-</div>
+  <div class="card">
+    <h3>🧭 Distribuição da Oferta na Semana (Radar)</h3>
+    <canvas id="chartRadar"></canvas>
+  </div>
 
-<div class="card full-width">
-  <h3>🔀 Fluxo Inteligente de Vagas</h3>
-  <svg id="chartSankey" height="420"></svg>
-</div>
+  <div class="card full-width">
+    <h3>🔀 Fluxo Inteligente (Dia → Tipo → Procedimento)</h3>
+    <svg id="chartSankey" class="chart-svg"></svg>
+  </div>
 
-<div class="card full-width">
-  <h3>🧠 Insights Estratégicos Automáticos</h3>
-  <ul id="listaInsights"></ul>
-</div>
+  <div class="card">
+    <h3>🚦 Mapa de Risco (Concentração e Retorno)</h3>
+    <canvas id="chartRisco"></canvas>
+  </div>
+
+  <!-- Insights (mantido) -->
+  <div class="card full-width" id="cardInsights">
+    <h3>🧠 Insights Automáticos</h3>
+    <ul id="listaInsights"></ul>
+  </div>
+
+  <!-- (Opcional) se seu JS da Fase 3 usar KPI de média -->
+  <span id="kpiMedia" style="display:none;"></span>
 
 </section>
 
-<section id="secTabela" style="display:none;">
-<table><tbody id="corpoTabela"></tbody></table>
+<!-- TABELA (OCULTA) -->
+<section id="secTabela" class="card full-width" style="margin-top:20px;">
+<h3>📋 Tabela Detalhada</h3>
+<div style="overflow:auto;">
+<table id="tabEscalas">
+<thead>
+<tr>
+<th>CPF</th>
+<th>Profissional</th>
+<th>Cód. Proc.</th>
+<th>Procedimento</th>
+<th>Exames</th>
+<th>Dias</th>
+<th>Início</th>
+<th>Fim</th>
+<th>Vagas</th>
+<th>Vig. Início</th>
+<th>Vig. Fim</th>
+</tr>
+</thead>
+<tbody id="corpoTabela"></tbody>
+</table>
+</div>
 </section>
-
 </main>
 
+<!-- FOOTER -->
 <footer id="footerCreditos"></footer>
 
+<!-- Scripts - ORDEM CRÍTICA -->
 <script src="js/config.js"></script>
 <script src="js/dashboard.js"></script>
 </body>
