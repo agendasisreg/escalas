@@ -85,7 +85,7 @@ HEADER - Fundo com gradiente azul (igual ao login)
 /* Texto do header em branco */
 .dash-header .unit-info h1,
 .dash-header .unit-info p {
-  color: #ffffff !important;
+  color: #f2b01e !important;
   text-shadow: 0 2px 6px rgba(0,0,0,0.3);
   position: relative;
   z-index: 2;
