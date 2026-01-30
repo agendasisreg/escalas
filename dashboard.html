@@ -6,28 +6,40 @@
 <title>Dashboard | Agenda SISREG</title>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="css/theme.css">
+<link rel="stylesheet" href="css/style.css">
 <!-- Bibliotecas externas -->
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
 <style>
-/* Mantive APENAS o mínimo para a página não "quebrar" */
-body{ margin:0; font-family:'Inter',sans-serif; }
-#secTabela{ display:none; }
-.full-width{ grid-column: 1 / -1; }
-/* [AJUSTE] Botão "Ver Tabela" dentro do card Insights */
-#cardInsights .card-head{
-display: flex;
-align-items: center;
-justify-content: space-between;
-gap: 12margin-bottom: 10px;
+/* Estilos adicionais para espaçamento */
+.dashboard-grid {
+  margin-top: 30px; /* Espaçamento entre KPIs e gráficos */
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+  gap: 24px;
 }
-/* override do .card h3 (pra não dar margem duplicada) */
-#cardInsights .card-head h3{
-margin: 0;
+
+.card.full-width {
+  grid-column: 1 / -1;
 }
-#cardInsights #btnToggleTabela{
-white-space: nowrap;
+
+/* Botão toggle dentro do card Insights */
+#cardInsights .card-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 10px;
+}
+
+#cardInsights .card-head h3 {
+  margin: 0;
+}
+
+/* Tabela oculta por padrão */
+#secTabela {
+  display: none;
 }
 
 /* [CORREÇÃO] Posicionamento dos botões na margem direita */
@@ -58,6 +70,7 @@ white-space: nowrap;
 </div>
 </div>
 </header>
+
 <!-- FILTRO -->
 <section class="filter-section">
 <label for="filtroMes">Filtrar por Mês de Vigência:</label>
@@ -69,9 +82,10 @@ white-space: nowrap;
 <option value="10">Outubro</option><option value="11">Novembro</option><option value="12">Dezembro</option>
 </select>
 </section>
+
 <!-- ÁREA DO DASHBOARD (usada no PDF) -->
 <main class="container" id="dashboardArea">
-<!-- KPIs -->
+<!-- KPIs - AGORA COM 4 CARDS -->
 <section class="kpi-container">
 <div class="kpi-card">
 <h3>Total de Vagas</h3>
@@ -90,7 +104,8 @@ white-space: nowrap;
 <p id="kpiProcedimentos">0</p>
 </div>
 </section>
-<!-- GRID DE GRÁFICOS -->
+
+<!-- GRID DE GRÁFICOS - TÍTULOS ATUALIZADOS -->
 <section class="dashboard-grid">
 <div class="card">
 <h3>🔥 Oferta por Dia e Horário</h3>
@@ -123,6 +138,7 @@ white-space: nowrap;
 <!-- (Opcional) se seu JS da Fase 3 usar KPI de média -->
 <span id="kpiMedia" style="display:none;"></span>
 </section>
+
 <!-- TABELA (OCULTA) -->
 <section id="secTabela" class="card full-width" style="margin-top:20px;">
 <h3>📋 Tabela Detalhada</h3>
@@ -148,8 +164,10 @@ white-space: nowrap;
 </div>
 </section>
 </main>
+
 <!-- FOOTER -->
 <footer id="footerCreditos"></footer>
+
 <!-- Scripts - ORDEM CRÍTICA -->
 <script src="js/config.js"></script>
 <script src="js/dashboard.js"></script>
