@@ -1,5 +1,5 @@
 /* =========================================================
-   THEME.CSS — Agenda SISREG (layout “Imagem 1”)
+   THEME.CSS — Agenda SISREG
    Arquivo: css/theme.css
    ========================================================= */
 
@@ -36,73 +36,145 @@ body{
   color: var(--text);
 }
 
-/* ---------- Containers (centralização como no print) ---------- */
+/* ---------- Containers (centralização) ---------- */
 .container{
   width: min(1260px, calc(100% - 40px)) !important;
   margin: 0 auto !important;
 }
 
-/* ---------- HEADER (barra azul da unidade) ---------- */
-.dash-header{
-  background: linear-gradient(90deg, var(--am-blue), var(--am-blue-3)) !important;
-  border-bottom: 0 !important;
-  padding: 16px 20px !important;
-  box-shadow: var(--shadow-soft) !important;
+/* ============================================================
+HEADER - Fundo com gradiente azul (igual ao login)
+============================================================ */
+.dash-header {
+  background: linear-gradient(135deg, #0d1b44 0%, #1a2a6c 50%, #0d1b44 100%);
+  background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100" viewBox="0 0 100 100"><rect width="100" height="100" fill="%230d1b44"/><path d="M20,30 L30,20 L40,30 L30,40 Z" fill="%231a2a6c" opacity="0.1"/><path d="M60,50 L70,40 L80,50 L70,60 Z" fill="%231a2a6c" opacity="0.1"/><path d="M30,70 L40,60 L50,70 L40,80 Z" fill="%231a2a6c" opacity="0.1"/><path d="M70,20 L80,10 L90,20 L80,30 Z" fill="%231a2a6c" opacity="0.1"/><path d="M10,60 L20,50 L30,60 L20,70 Z" fill="%231a2a6c" opacity="0.1"/></svg>');
+  background-size: 60px 60px;
+  background-position: center;
   position: relative;
+  overflow: hidden;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.25);
+  border-bottom: 4px solid var(--am-red);
+  padding: 16px 20px !important;
+  animation: slideDownHeader 0.4s ease;
 }
 
-/* linha amarela abaixo do nome da unidade (estilo print) */
-.dash-header::after{
-  content:"";
-  position:absolute;
-  left: 20px;
-  bottom: 10px;
-  width: 210px;
-  height: 4px;
-  border-radius: 999px;
-  background: var(--am-yellow);
-  opacity: .95;
+@keyframes slideDownHeader {
+  from {
+    transform: translateY(-100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
 }
 
-.unit-info h1{
-  margin:0 !important;
-  font-size: 1.35rem !important;
-  letter-spacing: .4px;
-  color: var(--am-yellow) !important; /* unidade em amarelo como no print */
-  font-weight: 800 !important;
-  text-transform: uppercase;
+/* Elementos decorativos flutuantes no header */
+.dash-header::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: radial-gradient(circle at 20% 30%, rgba(26, 42, 108, 0.15) 0%, transparent 50%),
+              radial-gradient(circle at 80% 70%, rgba(76, 175, 80, 0.1) 0%, transparent 50%);
+  z-index: 0;
 }
-.unit-info p{
-  margin:4px 0 0 0 !important;
-  color: rgba(255,255,255,.78) !important;
-  font-size: .86rem !important;
-}
-.header-btns{ gap:12px !important; }
 
-/* ---------- Botões (topo) ---------- */
-.btn-main{
+/* Texto do header em branco */
+.dash-header .unit-info h1,
+.dash-header .unit-info p {
+  color: #ffffff !important;
+  text-shadow: 0 2px 6px rgba(0,0,0,0.3);
+  position: relative;
+  z-index: 2;
+}
+
+/* Elementos decorativos circulares */
+.header-decorative {
+  position: absolute;
+  z-index: 1;
+  opacity: 0.1;
+}
+
+.header-decorative.circle-1 {
+  top: -30px;
+  left: 10%;
+  width: 100px;
+  height: 100px;
+  border: 3px solid var(--am-blue);
+  border-radius: 50%;
+}
+
+.header-decorative.circle-2 {
+  top: -20px;
+  right: 15%;
+  width: 80px;
+  height: 80px;
+  border: 3px solid var(--am-green);
+  border-radius: 50%;
+}
+
+.header-decorative.circle-3 {
+  bottom: -40px;
+  left: 25%;
+  width: 120px;
+  height: 120px;
+  border: 3px solid var(--am-yellow);
+  border-radius: 50%;
+}
+
+/* ---------- Botões do Header ---------- */
+.dash-header .btn-main {
+  background: rgba(255,255,255,0.15);
+  color: #ffffff;
+  border: 1px solid rgba(255,255,255,0.3);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.15);
   border: none !important;
   border-radius: 10px !important;
   padding: 10px 16px !important;
   font-weight: 800 !important;
   cursor: pointer;
-  box-shadow: 0 8px 18px rgba(0,0,0,.12);
   transition: transform .12s ease, filter .12s ease;
 }
-.btn-main:hover{ transform: translateY(-1px); filter: brightness(1.03); }
-.btn-main:active{ transform: translateY(0px); filter: brightness(.99); }
 
-.btn-sync{
+.dash-header .btn-main:hover {
+  background: rgba(255,255,255,0.25);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+  filter: brightness(1.03);
+}
+
+.dash-header .btn-main:active {
+  transform: translateY(0px);
+  filter: brightness(.99);
+}
+
+.dash-header .btn-main.btn-sync {
   background: linear-gradient(180deg, #43b657, #2f9741) !important;
   color: #fff !important;
 }
-.btn-new{
+
+.dash-header .btn-main.btn-new {
   background: linear-gradient(180deg, #f7c340, #f0ad12) !important;
   color: #17375e !important;
 }
-.btn-logout{
-  background: linear-gradient(180deg, #f05a4d, #d94135) !important;
-  color:#fff !important;
+
+.dash-header .btn-main.btn-logout {
+  background: rgba(255,255,255,0.9) !important;
+  color: var(--am-red) !important;
+  border-color: rgba(255,255,255,0.5) !important;
+}
+
+.dash-header .btn-main.btn-logout:hover {
+  background: #ffffff !important;
+  box-shadow: 0 6px 16px rgba(0,0,0,0.25);
+}
+
+.dash-header .btn-main.btn-back {
+  background: rgba(255,255,255,0.15) !important;
+  color: #ffffff !important;
 }
 
 /* botão PDF (quando usar btn-main sem classe específica) */
@@ -111,7 +183,9 @@ body{
   color:#fff !important;
 }
 
-/* ---------- Filtro (faixa logo abaixo do header) ---------- */
+/* =========================================================
+   Filtro (faixa logo abaixo do header)
+   ========================================================= */
 .filter-section{
   width: min(1260px, calc(100% - 40px)) !important;
   margin: 14px auto 0 auto !important;
@@ -137,13 +211,15 @@ body{
   font-weight: 700;
 }
 
-/* ---------- KPIs (cards superiores) ---------- */
+/* =========================================================
+   KPIs (cards superiores)
+   ========================================================= */
 .kpi-container{
   width: min(1260px, calc(100% - 40px)) !important;
   margin: 14px auto 0 auto !important;
   padding: 0 !important;
   display:grid;
-  grid-template-columns: repeat(5, minmax(180px, 1fr));
+  grid-template-columns: repeat(4, minmax(180px, 1fr)); /* Alterado de 5 para 4 cards */
   gap: 18px !important;
 }
 
@@ -157,7 +233,7 @@ body{
   min-height: 92px;
 }
 
-/* “brilho” diagonal do print */
+/* "brilho" diagonal */
 .kpi-card::before{
   content:"";
   position:absolute;
@@ -200,7 +276,7 @@ body{
   line-height: 1;
 }
 
-/* Variações por posição (como no print: azul, roxo, verde, laranja, azul escuro) */
+/* Variações por posição (azul, roxo, verde, laranja) */
 .kpi-container .kpi-card:nth-child(1){
   background: linear-gradient(135deg, #0f3f7c, #0a2f5c) !important;
 }
@@ -213,18 +289,10 @@ body{
 .kpi-container .kpi-card:nth-child(4){
   background: linear-gradient(135deg, #f05a4d, #f2b01e) !important;
 }
-.kpi-container .kpi-card:nth-child(5){
-  background: linear-gradient(135deg, #163a63, #102c4a) !important;
-}
 
-/* valor amarelo no “Procedimento Líder” (fica parecido ao print) */
-.kpi-container .kpi-card:nth-child(5) p{
-  font-size: 1.05rem !important;
-  color: var(--am-yellow) !important;
-  line-height: 1.2;
-}
-
-/* ---------- Área principal / cards de gráficos ---------- */
+/* =========================================================
+   Área principal / cards de gráficos
+   ========================================================= */
 #dashboardArea{
   width: min(1260px, calc(100% - 40px)) !important;
   margin: 18px auto 0 auto !important;
@@ -250,7 +318,7 @@ body{
   color:#fff;
 }
 
-/* grid 2 colunas como no print */
+/* grid 2 colunas */
 .dashboard-grid{
   display:grid !important;
   grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
@@ -290,7 +358,9 @@ body{
 /* full width (insights / tabela) */
 .full-width{ grid-column: 1 / -1 !important; }
 
-/* ---------- Tabela (quando abrir) ---------- */
+/* =========================================================
+   Tabela (quando abrir)
+   ========================================================= */
 #secTabela{
   background: rgba(255,255,255,.96) !important;
 }
@@ -315,7 +385,9 @@ tbody tr:hover{
   background: rgba(26,63,111,.06) !important;
 }
 
-/* ---------- Insights (lista) ---------- */
+/* =========================================================
+   Insights (lista)
+   ========================================================= */
 #listaInsights{
   margin: 0;
   padding-left: 18px;
@@ -492,7 +564,6 @@ body.login-page{
         background: transparent !important;
         border-top: none !important;
         color: rgba(0,0,0,.55) !important;
-        font-weight: 600;
       /* ---------- Footer (centralizar texto) ---------- */
         text-align: center !important;
       }
@@ -528,127 +599,4 @@ body.login-page{
 @media (max-width: 420px){
   .login-card{ padding: 28px; }
   .login-brand__text h1{ font-size: 1.55rem; }
-}
-
-/* ============================================================
-HEADER - Fundo com gradiente e elementos decorativos
-============================================================ */
-.dash-header {
-  background: linear-gradient(135deg, #0d1b44 0%, #1a2a6c 50%, #0d1b44 100%);
-  background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100" viewBox="0 0 100 100"><rect width="100" height="100" fill="%230d1b44"/><path d="M20,30 L30,20 L40,30 L30,40 Z" fill="%231a2a6c" opacity="0.1"/><path d="M60,50 L70,40 L80,50 L70,60 Z" fill="%231a2a6c" opacity="0.1"/><path d="M30,70 L40,60 L50,70 L40,80 Z" fill="%231a2a6c" opacity="0.1"/><path d="M70,20 L80,10 L90,20 L80,30 Z" fill="%231a2a6c" opacity="0.1"/><path d="M10,60 L20,50 L30,60 L20,70 Z" fill="%231a2a6c" opacity="0.1"/></svg>');
-  background-size: 60px 60px;
-  background-position: center;
-  position: relative;
-  overflow: hidden;
-  box-shadow: 0 4px 20px rgba(0,0,0,0.25);
-  border-bottom: 4px solid var(--am-red);
-  animation: slideDownHeader 0.4s ease;
-}
-
-@keyframes slideDownHeader {
-  from {
-    transform: translateY(-100%);
-    opacity: 0;
-  }
-  to {
-    transform: translateY(0);
-    opacity: 1;
-  }
-}
-
-/* Elementos decorativos flutuantes no header */
-.dash-header::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background: radial-gradient(circle at 20% 30%, rgba(26, 42, 108, 0.15) 0%, transparent 50%),
-              radial-gradient(circle at 80% 70%, rgba(76, 175, 80, 0.1) 0%, transparent 50%);
-  z-index: 0;
-}
-
-/* Texto do header em branco */
-.dash-header .unit-info h1,
-.dash-header .unit-info p {
-  color: #ffffff !important;
-  text-shadow: 0 2px 6px rgba(0,0,0,0.3);
-}
-
-/* Botões do header com fundo branco e texto azul/vermelho */
-.dash-header .btn-main {
-  background: rgba(255,255,255,0.15);
-  color: #ffffff;
-  border: 1px solid rgba(255,255,255,0.3);
-  box-shadow: 0 2px 8px rgba(0,0,0,0.15);
-}
-
-.dash-header .btn-main:hover {
-  background: rgba(255,255,255,0.25);
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(0,0,0,0.2);
-}
-
-.dash-header .btn-main.btn-logout {
-  background: rgba(255,255,255,0.9);
-  color: var(--am-red);
-  border-color: rgba(255,255,255,0.5);
-}
-
-.dash-header .btn-main.btn-logout:hover {
-  background: #ffffff;
-  box-shadow: 0 6px 16px rgba(0,0,0,0.25);
-}
-
-.dash-header .btn-main.btn-sync {
-  background: rgba(255,255,255,0.2);
-  color: #ffffff;
-}
-
-.dash-header .btn-main.btn-sync:hover {
-  background: rgba(255,255,255,0.3);
-}
-
-.dash-header .btn-main.btn-new {
-  background: rgba(76,175,80,0.2);
-  color: #ffffff;
-}
-
-.dash-header .btn-main.btn-new:hover {
-  background: rgba(76,175,80,0.3);
-}
-
-/* Elementos decorativos circulares */
-.header-decorative {
-  position: absolute;
-  z-index: 1;
-  opacity: 0.1;
-}
-
-.header-decorative.circle-1 {
-  top: -30px;
-  left: 10%;
-  width: 100px;
-  height: 100px;
-  border: 3px solid var(--am-blue);
-  border-radius: 50%;
-}
-
-.header-decorative.circle-2 {
-  top: -20px;
-  right: 15%;
-  width: 80px;
-  height: 80px;
-  border: 3px solid var(--am-green);
-  border-radius: 50%;
-}
-
-.header-decorative.circle-3 {
-  bottom: -40px;
-  left: 25%;
-  width: 120px;
-  height: 120px;
-  border: 3px solid var(--am-yellow);
-  border-radius: 50%;
 }
