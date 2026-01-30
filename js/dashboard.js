@@ -348,7 +348,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   }
 
   /**
-   * Gráfico C: Stream por horário (1ª vez vs retorno)
+   * Gráfico C: Stream por horário (ofeta x hora)
    */
   function gerarStreamHorario(dados) {
     const svgEl = document.getElementById("chartStream");
@@ -359,99 +359,92 @@ document.addEventListener("DOMContentLoaded", async () => {
   
     const w = svgEl.clientWidth || 520;
     const h = svgEl.clientHeight || 320;
+    const margin = { top: 20, right: 20, bottom: 40, left: 50 };
+  
     svg.attr("viewBox", `0 0 ${w} ${h}`);
   
     const hMin = 7;
     const hMax = 18;
     const hours = d3.range(hMin, hMax + 1);
   
-    // Inicializa estrutura
+    // ===== AGREGAÇÃO: vagas por hora de início =====
     const byH = {};
-    hours.forEach(hr => {
-      byH[hr] = { hr, primeira: 0, retorno: 0 };
-    });
+    hours.forEach(hr => byH[hr] = 0);
   
     dados.forEach(d => {
-      const inicio = parseInt(
-        String(SisregUtils.formatarHora(d.hora_inicio) || "0").split(":")[0],
+      const hr = parseInt(
+        String(SisregUtils.formatarHora(d.hora_inicio) || "").split(":")[0],
         10
       );
-      const fim = parseInt(
-        String(SisregUtils.formatarHora(d.hora_fim) || "0").split(":")[0],
-        10
-      );
-  
-      if (!inicio || !fim || fim <= inicio) return;
-  
-      const totalHoras = fim - inicio;
-      const vagasPorHora = (Number(d.vagas) || 0) / totalHoras;
-  
-      const campoProc = String(d.procedimento || "").toUpperCase();
-      const campoExame = String(d.exames || "").toUpperCase();
-      const isRet = campoProc.includes("RETORNO") || campoExame.includes("RETORNO");
-  
-      for (let hr = inicio; hr < fim; hr++) {
-        if (byH[hr]) {
-          if (isRet) byH[hr].retorno += vagasPorHora;
-          else byH[hr].primeira += vagasPorHora;
-        }
+      if (byH[hr] != null) {
+        byH[hr] += Number(d.vagas) || 0;
       }
     });
   
-    const data = hours.map(hr => byH[hr]);
+    const data = hours.map(hr => ({
+      hr,
+      vagas: byH[hr]
+    }));
   
-    const keys = ["primeira", "retorno"];
-  
-    const stack = d3.stack()
-      .keys(keys)
-      .offset(d3.stackOffsetWiggle)
-      .order(d3.stackOrderInsideOut);
-  
-    const series = stack(data);
-  
+    // ===== ESCALAS =====
     const x = d3.scaleLinear()
       .domain([hMin, hMax])
-      .range([40, w - 20]);
+      .range([margin.left, w - margin.right]);
   
     const y = d3.scaleLinear()
-      .domain([
-        d3.min(series, s => d3.min(s, d => d[0])),
-        d3.max(series, s => d3.max(s, d => d[1]))
-      ])
+      .domain([0, d3.max(data, d => d.vagas) || 1])
       .nice()
-      .range([h - 30, 20]);
+      .range([h - margin.bottom, margin.top]);
   
+    // ===== ÁREA =====
     const area = d3.area()
-      .x((d, i) => x(data[i].hr))
-      .y0(d => y(d[0]))
-      .y1(d => y(d[1]))
-      .curve(d3.curveCatmullRom.alpha(0.5));
+      .x(d => x(d.hr))
+      .y0(y(0))
+      .y1(d => y(d.vagas))
+      .curve(d3.curveMonotoneX);
   
-    const colors = {
-      primeira: "rgba(46, 204, 113, 0.55)",
-      retorno: "rgba(231, 76, 60, 0.55)"
-    };
+    svg.append("path")
+      .datum(data)
+      .attr("fill", "rgba(26, 42, 108, 0.25)")
+      .attr("stroke", "rgba(26, 42, 108, 0.9)")
+      .attr("stroke-width", 2)
+      .attr("d", area);
   
+    // ===== PONTOS =====
     svg.append("g")
-      .selectAll("path")
-      .data(series)
+      .selectAll("circle")
+      .data(data)
       .enter()
-      .append("path")
-      .attr("d", area)
-      .attr("fill", s => colors[s.key])
-      .attr("stroke", "rgba(0,0,0,0.08)")
-      .attr("stroke-width", 1);
+      .append("circle")
+      .attr("cx", d => x(d.hr))
+      .attr("cy", d => y(d.vagas))
+      .attr("r", 4)
+      .attr("fill", "#1a2a6c");
   
-    // Eixo X
+    // ===== EIXOS =====
     const axisX = d3.axisBottom(x)
       .ticks(hMax - hMin)
       .tickFormat(d => String(d).padStart(2, "0") + ":00");
   
+    const axisY = d3.axisLeft(y).ticks(5);
+  
     svg.append("g")
-      .attr("transform", `translate(0,${h - 30})`)
-      .call(axisX)
-      .call(g => g.selectAll("text").attr("font-size", 10));
+      .attr("transform", `translate(0,${h - margin.bottom})`)
+      .call(axisX);
+  
+    svg.append("g")
+      .attr("transform", `translate(${margin.left},0)`)
+      .call(axisY);
+  
+    // ===== TÍTULO AUXILIAR =====
+    svg.append("text")
+      .attr("x", margin.left)
+      .attr("y", margin.top - 6)
+      .attr("font-size", 12)
+      .attr("fill", "rgba(0,0,0,0.7)")
+      .text("Oferta total por horário de início");
   }
+
 
   /**
    * Gráfico D: Sankey Dia → Profissional → Tipo
