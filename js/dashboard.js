@@ -26,51 +26,60 @@ document.addEventListener("DOMContentLoaded", async () => {
   /**
    * Atualiza os cards KPI com base nos dados
    */
-  function atualizarCards(dadosFiltrados) {
-    const kpiVagas = document.getElementById("kpiVagas");
-    const kpiProfs = document.getElementById("kpiProfissionais");
-    const kpiRetorno = document.getElementById("kpiRetorno");
-    const kpiProcedimentos = document.getElementById("kpiProcedimentos");
-    
-    if (!dadosFiltrados || dadosFiltrados.length === 0) {
-      if (kpiVagas) kpiVagas.textContent = "0";
-      if (kpiProfs) kpiProfs.textContent = "0";
-      if (kpiRetorno) kpiRetorno.textContent = "0%";
-      if (kpiProcedimentos) kpiProcedimentos.textContent = "0";
-      return;
-    }
-    
-    let totalVagas = 0;
-    let vagasRetorno = 0;
-    const cpfs = new Set();
-    const procsUnicos = new Set();
-    
-    dadosFiltrados.forEach(item => {
-      const d = SisregUtils.normalizarItem(item);
-      totalVagas += d.vagas;
+    function atualizarCards(dadosFiltrados) {
+      const kpiVagas = document.getElementById("kpiVagas");
+      const kpiProfs = document.getElementById("kpiProfissionais");
+      const kpiRetorno = document.getElementById("kpiRetorno");
+      const kpiProcedimentos = document.getElementById("kpiProcedimentos");
       
-      const campoProc = String(d.procedimento || "").toUpperCase().trim();
-      const campoExame = String(d.exames || "").toUpperCase().trim();
-      
-      if (campoProc.includes("RETORNO") || campoExame.includes("RETORNO")) {
-        vagasRetorno += d.vagas;
+      if (!dadosFiltrados || dadosFiltrados.length === 0) {
+        if (kpiVagas) kpiVagas.textContent = "0";
+        if (kpiProfs) kpiProfs.textContent = "0";
+        if (kpiRetorno) kpiRetorno.textContent = "0%";
+        if (kpiProcedimentos) kpiProcedimentos.textContent = "0";
+        return;
       }
       
-      if (d.cpf) cpfs.add(d.cpf);
-      if (d.procedimento) procsUnicos.add(d.procedimento.trim());
-    });
-    
-    const nProfs = cpfs.size;
-    const nProcs = procsUnicos.size;
-    const percRetorno = totalVagas > 0 ? Math.round((vagasRetorno / totalVagas) * 100) : 0;
-    
-    // Atualizar UI
-    if (kpiVagas) kpiVagas.textContent = SisregUtils.formatarNumero(totalVagas);
-    if (kpiProfs) kpiProfs.textContent = nProfs;
-    if (kpiProcedimentos) kpiProcedimentos.textContent = nProcs;
-    if (kpiRetorno) kpiRetorno.textContent = `${percRetorno}%`;
-  }
-  
+      let totalVagas = 0;
+      let vagasRetorno = 0;
+      const cpfs = new Set();
+      const procsUnicos = new Set();
+      
+      dadosFiltrados.forEach(item => {
+        const d = SisregUtils.normalizarItem(item);
+        
+        // Cálculo CORRETO das vagas
+        const vagasCalculadas = SisregUtils.calcularTotalVagas(
+          d.vagas,
+          d.dias_semana,
+          d.vigencia_inicio,
+          d.vigencia_fim
+        );
+        
+        totalVagas += vagasCalculadas;
+        
+        // Cálculo de vagas de retorno
+        const campoProc = String(d.procedimento || "").toUpperCase().trim();
+        const campoExame = String(d.exames || "").toUpperCase().trim();
+        
+        if (campoProc.includes("RETORNO") || campoExame.includes("RETORNO")) {
+          vagasRetorno += vagasCalculadas;
+        }
+        
+        if (d.cpf) cpfs.add(d.cpf);
+        if (d.procedimento) procsUnicos.add(d.procedimento.trim());
+      });
+      
+      const nProfs = cpfs.size;
+      const nProcs = procsUnicos.size;
+      const percRetorno = totalVagas > 0 ? Math.round((vagasRetorno / totalVagas) * 100) : 0;
+      
+      // Atualizar UI
+      if (kpiVagas) kpiVagas.textContent = SisregUtils.formatarNumero(totalVagas);
+      if (kpiProfs) kpiProfs.textContent = nProfs;
+      if (kpiProcedimentos) kpiProcedimentos.textContent = nProcs;
+      if (kpiRetorno) kpiRetorno.textContent = `${percRetorno}%`;
+    }  
   /**
    * Renderiza dados na tabela
    */
