@@ -186,7 +186,34 @@
   text-align: center;
   padding: 20px;
 }
-  
+
+  /* Estilos para o gráfico de profissionais */
+.chart-controls {
+  display: none;
+}
+
+.badge {
+  fill: rgba(255,255,255,0.18);
+}
+
+.name {
+  font-size: 12px;
+  font-weight: 800;
+  fill: #0f172a;
+  text-anchor: middle;
+  font-family: 'Inter', sans-serif;
+}
+
+.value {
+  font-weight: 950;
+  fill: #ffffff;
+  text-anchor: middle;
+  paint-order: stroke;
+  stroke: rgba(0,0,0,0.18);
+  stroke-width: 3px;
+  stroke-linejoin: round;
+  font-family: 'Inter', sans-serif;
+}  
 </style>
 </head>
 <body>
@@ -286,11 +313,15 @@
     <div id="chartProcedimentos" class="chart-container"></div>
   </div>
 
+   <!-- Distribuicao de vagas por profissionais -->
   <div class="card">
-    <h3>🧬 Oferta por Profissional</h3>
-    <p class="chart-subtitle"></p>Ranking de oferta por profissional</p>
-    <div id="chartProfissional" class="chart-container"></div>
-</div>
+    <h3>👨‍⚕️ Oferta por Profissional</h3>
+    <p class="chart-subtitle">Distribuição de vagas por profissional</p>
+    <div class="chart-controls" style="display: none;">
+      <input type="file" id="iconFile" accept="image/png,image/svg+xml" style="display: none;" />
+    </div>
+    <div id="chartProfissionais" class="chart-container"></div>
+  </div>
   
   <div class="card full-width" id="cardInsights">
     <h3>🧠 Insights Automáticos</h3>
