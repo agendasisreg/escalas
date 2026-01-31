@@ -291,13 +291,24 @@ class SisregUtils {
    */
   static formatarDataBR(valor) {
     if (!valor || typeof valor !== "string") return valor;
+    
+    // Se for ISO (com T)
     if (valor.includes('T')) {
       const dataPura = valor.split('T')[0];
       return dataPura.split('-').reverse().join('/');
     }
+    
+    // Se for YYYY-MM-DD
+    if (valor.includes('-')) {
+      const partes = valor.split('-');
+      if (partes.length === 3) {
+        return `${partes[2]}/${partes[1]}/${partes[0]}`;
+      }
+    }
+    
     return valor;
   }
-  
+
   /**
    * Extrai dias da semana de uma string
    * @param {string} diasTxt - Texto com dias da semana
