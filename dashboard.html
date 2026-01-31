@@ -13,7 +13,6 @@
 <!-- [NOVO - SOMENTE PARA GRÁFICOS] D3 + Sankey -->
 <script src="https://d3js.org/d3.v7.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/d3-sankey@0.12.3/dist/d3-sankey.min.js"></script>
-
 <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
 <style>
@@ -135,7 +134,59 @@
   margin: 15px 0 5px;
   text-align: center;
   color: #2c3e50;
-}  
+}
+
+  /* Estilos para o container do gráfico D3 */
+.chart-container {
+  width: 100%;
+  height: 320px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background: rgba(244, 247, 251, 0.3);
+  border-radius: 12px;
+  margin-top: 10px;
+  position: relative;
+  overflow: hidden;
+}
+
+.chart-subtitle {
+  font-size: 13px;
+  color: #7f8c8d;
+  margin: -8px 0 15px 0;
+  font-style: italic;
+  text-align: center;
+}
+
+/* Estilos para os balões D3 */
+.node circle {
+  stroke: #fff;
+  stroke-width: 2px;
+  transition: all 0.3s ease;
+}
+
+.node circle:hover {
+  stroke-width: 4px;
+  stroke: #1a2a6c;
+  filter: drop-shadow(0 0 8px rgba(26, 42, 108, 0.5));
+}
+
+.node text {
+  fill: white;
+  font-weight: bold;
+  text-anchor: middle;
+  pointer-events: none;
+  text-shadow: 0px 1px 3px rgba(0,0,0,0.5);
+  font-family: 'Inter', sans-serif;
+}
+
+.no-data-message {
+  color: #9aa0a6;
+  font-size: 16px;
+  text-align: center;
+  padding: 20px;
+}
+  
 </style>
 </head>
 <body>
@@ -227,6 +278,19 @@
       <canvas id="evolutionChart"></canvas>
     </div>
   </div>
+
+  <!-- Distribuicao de vagas por procedimentos -->
+  <div class="card">
+    <h3>🧬 Oferta por Procedimento</h3>
+    <p class="chart-subtitle">Distribuição de vagas por especialidade</p>
+    <div id="chartProcedimentos" class="chart-container"></div>
+  </div>
+
+  <div class="card">
+    <h3>🧬 Oferta por Profissional</h3>
+    <p class="chart-subtitle"></p>Ranking de oferta por profissional</p>
+    <div id="chartProfissional" class="chart-container"></div>
+</div>
   
   <div class="card full-width" id="cardInsights">
     <h3>🧠 Insights Automáticos</h3>
