@@ -163,6 +163,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     gerarDonutChart(dados);        // NOVO: Composição da Escala
     gerarEvolucaoMensal(dados);    // NOVO: Evolução Mensal (full width)
     gerarProcedimentos(dados);     // NOVO: Vagas por procedimentos
+    gerarRanking(dados);           // NOVO: Oferta vagas por profissional
     gerarInsights(dados); // mantido e melhorado
   }
 
@@ -636,6 +637,172 @@ document.addEventListener("DOMContentLoaded", async () => {
         .style("fill", "rgba(255,255,255,0.9)")
         .text(d => SisregUtils.formatarNumero(d.data.value));
     }
+
+   /**
+   * Gráfico 5: Oferta por Profissional (Circle Packing com Ícones de Jaleco)
+   */
+  function gerarRanking(dados) {
+    // Verifica se D3 está carregado
+    if (typeof d3 === 'undefined') {
+      console.error('D3.js não está carregado');
+      return;
+    }
+  
+    const container = document.getElementById('chartProfissionais');
+    if (!container) return;
+  
+    // Limpa o container antes de redesenhar
+    container.innerHTML = '';
+  
+    // Agrega dados por profissional com cálculo correto de vagas
+    const profissionalMap = {};
+    
+    dados.forEach(d => {
+      const prof = (d.profissional || "Sem nome").trim();
+      if (!prof || prof === "") return;
+      
+      // Calcula vagas corretamente considerando dias e vigência
+      const vagasCalculadas = SisregUtils.calcularTotalVagas(
+        d.vagas,
+        d.dias_semana,
+        d.vigencia_inicio,
+        d.vigencia_fim
+      );
+      
+      profissionalMap[prof] = (profissionalMap[prof] || 0) + vagasCalculadas;
+    });
+  
+    // Converte para array e ordena (top 10)
+    let dataRows = Object.entries(profissionalMap)
+      .map(([name, value]) => ({ 
+        name: name.length > 20 ? name.substring(0, 17) + "..." : name,
+        value: value 
+      }))
+      .sort((a, b) => b.value - a.value)
+      .slice(0, 10); // Limita aos top 10 para melhor visualização
+  
+    // Se não houver dados, mostra mensagem
+    if (dataRows.length === 0) {
+      container.innerHTML = '<p class="no-data-message">Nenhum dado disponível para este período</p>';
+      return;
+    }
+  
+    // Configurações do gráfico
+    const width = container.clientWidth;
+    const height = 320;
+    const padding = 60;
+  
+    // Cria SVG
+    const svg = d3.select(container)
+      .append("svg")
+      .attr("width", width)
+      .attr("height", height);
+  
+    svg.selectAll("*").remove();
+  
+    // Sombras leves
+    const defs = svg.append("defs");
+    
+    const shadow = defs.append("filter")
+      .attr("id", "shadow")
+      .attr("x", "-50%").attr("y", "-50%")
+      .attr("width", "200%").attr("height", "200%");
+  
+    shadow.append("feDropShadow")
+      .attr("dx", 0).attr("dy", 8)
+      .attr("stdDeviation", 10)
+      .attr("flood-color", "#000")
+      .attr("flood-opacity", 0.16);
+  
+    // Cria hierarquia
+    const root = d3.hierarchy({ children: dataRows })
+      .sum(d => d.value)
+      .sort((a, b) => b.value - a.value);
+  
+    // Layout de empacotamento
+    d3.pack()
+      .size([width - 100, height - 100])
+      .padding(60)(root);
+  
+    // Cores por faixa (sem gradiente, sem tons da mesma cor)
+    function colorByValue(v) {
+      if (v >= 180) return "#E11D48";  // rosa/vermelho forte
+      if (v >= 140) return "#F97316";  // laranja
+      if (v >= 100) return "#EAB308";  // amarelo
+      if (v >= 70)  return "#22C55E";  // verde
+      return "#7C3AED";                // roxo
+    }
+  
+    // Fallback (um jaleco simples em SVG)
+    const fallbackCoatSvg = `
+    <svg xmlns="http://www.w3.org/2000/svg" width="140" height="160" viewBox="0 0 140 160">
+      <path fill="#fff" d="M55 8 L35 24 L18 54 L28 150 L112 150 L122 54 L105 24 L85 8 Z"/>
+      <path fill="#fff" d="M55 8 L70 36 L85 8 Z"/>
+      <rect x="40" y="90" width="20" height="26" fill="#fff"/>
+      <rect x="80" y="90" width="20" height="26" fill="#fff"/>
+    </svg>`;
+    
+    const fallbackDataUrl = "data:image/svg+xml;charset=utf-8," + encodeURIComponent(fallbackCoatSvg);
+    const iconHref = "assets/jaleco.png"; // iconJaleco
+  
+    // Cria máscara única (mesma imagem para todos)
+    const coatW = 140;
+    const coatH = 160;
+    
+    defs.append("mask")
+      .attr("id", "coatMask")
+      .attr("maskUnits", "userSpaceOnUse")
+      .attr("x", 0).attr("y", 0)
+      .attr("width", coatW).attr("height", coatH)
+      .append("image")
+        .attr("href", iconHref)
+        .attr("x", 0).attr("y", 0)
+        .attr("width", coatW).attr("height", coatH)
+        .attr("preserveAspectRatio", "xMidYMid meet");
+  
+    // Cria nós
+    const nodes = svg.selectAll("g.node")
+      .data(root.leaves())
+      .enter()
+      .append("g")
+      .attr("class", "node")
+      .attr("transform", d => `translate(${d.x + 50},${d.y + 50})`);
+  
+    // Grupo do ícone (centralizado e escalado pelo raio)
+    const coatGroup = nodes.append("g")
+      .attr("filter", "url(#shadow)")
+      .attr("transform", d => {
+        const s = (d.r * 2) / coatW; // escala proporcional ao "diâmetro" do pack
+        return `scale(${s}) translate(${-coatW/2},${-coatH/2})`;
+      });
+  
+    // A "pintura" do jaleco: retângulo colorido recortado pela máscara
+    coatGroup.append("rect")
+      .attr("x", 0).attr("y", 0)
+      .attr("width", coatW).attr("height", coatH)
+      .attr("fill", d => colorByValue(d.data.value))
+      .attr("mask", "url(#coatMask)");
+  
+    // "Brilho" suave pra ficar mais premium
+    coatGroup.append("rect")
+      .attr("x", 0).attr("y", 0)
+      .attr("width", coatW).attr("height", coatH)
+      .attr("fill", "rgba(255,255,255,0.10)")
+      .attr("mask", "url(#coatMask)");
+  
+    // Valor (em cima do ícone)
+    nodes.append("text")
+      .attr("class", "value")
+      .attr("y", 6)
+      .style("font-size", d => `${Math.max(14, d.r/2.2)}px`)
+      .text(d => SisregUtils.formatarNumero(d.data.value));
+  
+    // Nome (abaixo)
+    nodes.append("text")
+      .attr("class", "name")
+      .attr("y", d => d.r + 20)
+      .text(d => d.data.name);
+  }
 
   
   /**
