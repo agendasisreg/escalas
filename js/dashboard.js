@@ -323,50 +323,49 @@ document.addEventListener("DOMContentLoaded", async () => {
     /**
      * Gráfico 3: Evolução de Oferta Mensal (1ª Vez vs Retorno)
      */
-    function gerarEvolucaoMensal(dados) {
-      const canvas = document.getElementById("evolutionChart");
-      if (!canvas) return;
-      if (charts.evolucaoMensal) charts.evolucaoMensal.destroy();
-    
-      // Agregar dados por mês
-      const mesesMap = {};
+      function gerarEvolucaoMensal(dados) {
+        const canvas = document.getElementById("evolutionChart");
+        if (!canvas) return;
+        if (charts.evolucaoMensal) charts.evolucaoMensal.destroy();
       
-      dados.forEach(d => {
-        // Extrair mês/ano da vigência inicial
-        const dt = SisregUtils.formatarDataBR(d.vigencia_inicio);
-        if (!dt) return;
-        
-        const partes = dt.split("/");
-        if (partes.length < 2) return;
-        
-        // Formato: "Jan/2026"
+        // Agregar dados por mês
+        const mesesMap = {};
         const mesNome = ["Jan", "Fev", "Mar", "Abr", "Mai", "Jun", "Jul", "Ago", "Set", "Out", "Nov", "Dez"];
-        const mesIdx = parseInt(partes[1]) - 1;
-        const mesAno = `${mesNome[mesIdx]}/${partes[2]}`;
-        
-        if (!mesesMap[mesAno]) {
-          mesesMap[mesAno] = { v1: 0, vr: 0 };
-        }
-        
-        // Calcular vagas corretamente
-        const vagasCalculadas = SisregUtils.calcularTotalVagas(
-          d.vagas,
-          d.dias_semana,
-          d.vigencia_inicio,
-          d.vigencia_fim
-        );
-        
-        // Classificar como 1ª vez ou retorno
-        const campoProc = String(d.procedimento || "").toUpperCase().trim();
-        const campoExame = String(d.exames || "").toUpperCase().trim();
-        
-        if (campoProc.includes("RETORNO") || campoExame.includes("RETORNO")) {
-          mesesMap[mesAno].vr += vagasCalculadas;
-        } else {
-          mesesMap[mesAno].v1 += vagasCalculadas;
-        }
-      });
       
+        dados.forEach(d => {
+          // CORREÇÃO 1: Use parseData para converter para objeto Date
+          const dataInicio = SisregUtils.parseData(d.vigencia_inicio);
+          if (!dataInicio) return;
+          
+          // CORREÇÃO 2: Extraia mês diretamente do objeto Date
+          const mesIdx = dataInicio.getMonth(); // 0-11 (não precisa -1)
+          const ano = dataInicio.getFullYear();
+          const mesAno = `${mesNome[mesIdx]}/${ano}`;
+          
+          if (!mesesMap[mesAno]) {
+            mesesMap[mesAno] = { v1: 0, vr: 0 };
+          }
+          
+          // Calcular vagas corretamente
+          const vagasCalculadas = SisregUtils.calcularTotalVagas(
+            d.vagas,
+            d.dias_semana,
+            d.vigencia_inicio,
+            d.vigencia_fim
+          );
+          
+          // CORREÇÃO 3: Melhore a classificação de retorno
+          const campoProc = String(d.procedimento || "").toUpperCase().trim();
+          const campoExame = String(d.exames || "").toUpperCase().trim();
+          
+          // Procura "RETORNO" em qualquer posição da string
+          if (campoProc.includes("RETORNO") || campoExame.includes("RETORNO")) {
+            mesesMap[mesAno].vr += vagasCalculadas;
+          } else {
+            mesesMap[mesAno].v1 += vagasCalculadas;
+          }
+        });  
+        
       // Ordenar meses cronologicamente
       const mesesOrdenados = Object.keys(mesesMap).sort((a, b) => {
         const [ma, aa] = a.split("/");
