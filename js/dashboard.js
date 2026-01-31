@@ -159,8 +159,8 @@ document.addEventListener("DOMContentLoaded", async () => {
    * Atualiza TODOS os gráficos (novos)
    */
   function atualizarGraficos(dados) {
-    gerarRadial(dados);
-    gerarEficienciaBubble(dados);
+    gerarGaugeChart(dados);        // NOVO: Taxa de Renovação
+    gerarDonutChart(dados);        // NOVO: Composição da Escala
     gerarStreamHorario(dados);
     gerarSankey(dados);
     gerarInsights(dados); // mantido e melhorado
@@ -181,181 +181,145 @@ document.addEventListener("DOMContentLoaded", async () => {
     el.style.display = "none";
   }
 
-  /**
-   * Gráfico A: Radial (dia x hora) — visual “IA-like”
-   */
-  function gerarRadial(dados) {
-    const svgEl = document.getElementById("chartRadial");
-    if (!svgEl || typeof d3 === "undefined") return;
-  
-    const svg = d3.select(svgEl);
-    svg.selectAll("*").remove();
-  
-    const w = svgEl.clientWidth || 420;
-    const h = svgEl.clientHeight || 320;
-    const cx = w / 2;
-    const cy = h / 2;
-    const R = Math.min(w, h) * 0.42;
-  
-    svg.attr("viewBox", `0 0 ${w} ${h}`);
-  
-    const dias = ["DOM","SEG","TER","QUA","QUI","SEX","SAB"];
-  
-    // ===== AGREGAÇÃO: total de vagas por dia =====
-    const byDay = Object.fromEntries(dias.map(d => [d, 0]));
-  
-    dados.forEach(d => {
-      const v = Number(d.vagas) || 0;
-  
-      const diasSel = String(d.dias_semana || "")
-        .toUpperCase()
-        .split(",")
-        .map(x => x.trim())
-        .filter(x => dias.includes(x));
-  
-      if (diasSel.length === 0) {
-        byDay["SEG"] += v; // fallback
-      } else {
-        diasSel.forEach(di => byDay[di] += v);
-      }
-    });
-  
-    const maxV = Math.max(1, ...Object.values(byDay));
-  
-    const g = svg.append("g")
-      .attr("transform", `translate(${cx},${cy})`);
-  
-    const angle = d3.scaleBand()
-      .domain(dias)
-      .range([0, Math.PI * 2])
-      .align(0);
-  
-    const radius = d3.scaleLinear()
-      .domain([0, maxV])
-      .range([0, R]);
-  
-    const color = d3.scaleSequential(d3.interpolateYlOrBr)
-      .domain([0, maxV]);
-  
-    const arc = d3.arc()
-      .innerRadius(0)
-      .outerRadius(d => radius(d.value))
-      .startAngle(d => angle(d.day))
-      .endAngle(d => angle(d.day) + angle.bandwidth())
-      .padAngle(0.02)
-      .padRadius(0);
-  
-    const data = dias.map(day => ({
-      day,
-      value: byDay[day]
-    }));
-  
-    g.selectAll("path")
-      .data(data)
-      .enter()
-      .append("path")
-      .attr("d", arc)
-      .attr("fill", d => color(d.value))
-      .attr("opacity", 0.9)
-      .attr("stroke", "rgba(0,0,0,0.12)")
-      .on("mousemove", (event, d) => {
-        const tip = `${d.day}<br/><strong>${d.value}</strong> vagas`;
-        const el = document.getElementById("vizTooltip");
-        if (el) {
-          el.innerHTML = tip;
-          el.style.left = event.clientX + 12 + "px";
-          el.style.top = event.clientY + 12 + "px";
-          el.style.display = "block";
+    /**
+     * Gráfico 1: Gauge Chart - Taxa de Renovação (1ª Vez vs Retorno)
+     */
+    function gerarGaugeChart(dados) {
+      const canvas = document.getElementById("gaugeChart");
+      if (!canvas) return;
+      if (charts.gauge) charts.gauge.destroy();
+    
+      // Calcular totais com o cálculo correto de vagas
+      let vagasPrimeiraVez = 0;
+      let vagasRetorno = 0;
+    
+      dados.forEach(d => {
+        const vagasCalculadas = SisregUtils.calcularTotalVagas(
+          d.vagas,
+          d.dias_semana,
+          d.vigencia_inicio,
+          d.vigencia_fim
+        );
+        
+        const campoProc = String(d.procedimento || "").toUpperCase().trim();
+        const campoExame = String(d.exames || "").toUpperCase().trim();
+        
+        if (campoProc.includes("RETORNO") || campoExame.includes("RETORNO")) {
+          vagasRetorno += vagasCalculadas;
+        } else {
+          vagasPrimeiraVez += vagasCalculadas;
         }
-      })
-      .on("mouseleave", () => {
-        const el = document.getElementById("vizTooltip");
-        if (el) el.style.display = "none";
       });
-  
-    // ===== RÓTULOS =====
-    g.selectAll("text")
-      .data(data)
-      .enter()
-      .append("text")
-      .attr("text-anchor", "middle")
-      .attr("font-size", 11)
-      .attr("fill", "rgba(0,0,0,0.75)")
-      .attr("transform", d => {
-        const a = angle(d.day) + angle.bandwidth() / 2 - Math.PI / 2;
-        const r = R + 18;
-        return `translate(${Math.cos(a) * r},${Math.sin(a) * r})`;
-      })
-      .text(d => d.day);
-  }
-
-  /**
-   * Gráfico B: Eficiência por Profissional (Bubble)
-   *  x = vagas totais
-   *  y = % retorno
-   *  r = quantidade de dias ofertados
-   */
-  function gerarEficienciaBubble(dados) {
-    const canvas = document.getElementById("chartEficiência");
-    if (!canvas) return;
-    if (charts.eficiencia) charts.eficiencia.destroy();
-
-    const profMap = {};
-    dados.forEach(d => {
-      const prof = (d.profissional || "(Sem nome)").trim();
-      if (!profMap[prof]) profMap[prof] = { total: 0, ret: 0, dias: new Set() };
-
-      const v = Number(d.vagas) || 0;
-      profMap[prof].total += v;
-
-      const campoProc = String(d.procedimento || "").toUpperCase().trim();
-      const campoExame = String(d.exames || "").toUpperCase().trim();
-      const isRet = campoProc.includes("RETORNO") || campoExame.includes("RETORNO");
-      if (isRet) profMap[prof].ret += v;
-
-      const diasSel = SisregUtils.extrairDias(d.dias_semana);
-      diasSel.forEach(di => profMap[prof].dias.add(di));
-    });
-
-    const pontos = Object.entries(profMap).map(([prof, x]) => {
-      const perc = x.total > 0 ? Math.round((x.ret / x.total) * 100) : 0;
-      const r = Math.max(5, Math.min(18, x.dias.size * 4));
-      return { x: x.total, y: perc, r, _prof: prof, _total: x.total, _ret: x.ret, _dias: x.dias.size };
-    });
-
-    charts.eficiencia = new Chart(canvas, {
-      type: "bubble",
-      data: {
-        datasets: [{
-          label: "Profissionais",
-          data: pontos,
-          backgroundColor: "rgba(253,187,45,0.55)",
-          borderColor: "rgba(0,0,0,0.10)",
-          borderWidth: 1
-        }]
-      },
-      options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        plugins: {
-          legend: { display: false },
-          tooltip: {
-            callbacks: {
-              label: (ctx) => {
-                const r = ctx.raw || {};
-                return `${r._prof} • total ${r._total} • retorno ${r._ret} (${r.y}%) • dias ${r._dias}`;
+    
+      const total = vagasPrimeiraVez + vagasRetorno;
+      const taxaRenovacao = total > 0 ? Math.round((vagasPrimeiraVez / total) * 100) : 0;
+      
+      // Atualizar texto percentual
+      const percTextEl = document.getElementById("percText");
+      if (percTextEl) {
+        percTextEl.textContent = `${taxaRenovacao}%`;
+        percTextEl.style.color = taxaRenovacao > 50 ? '#27ae60' : '#e67e22';
+      }
+    
+      charts.gauge = new Chart(canvas, {
+        type: 'doughnut',
+        data: {
+          datasets: [{
+            data: [taxaRenovacao, 100 - taxaRenovacao],
+            backgroundColor: [taxaRenovacao > 50 ? '#27ae60' : '#e67e22', '#ecf0f1'],
+            borderWidth: 0,
+            circumference: 180,
+            rotation: 270,
+            cutout: '80%'
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: { display: false },
+            tooltip: { enabled: false }
+          }
+        }
+      });
+    }
+    
+    /**
+     * Gráfico 2: Donut Chart - Composição da Escala (1ª Vez vs Retorno)
+     */
+    function gerarDonutChart(dados) {
+      const canvas = document.getElementById("donutChart");
+      if (!canvas) return;
+      if (charts.donut) charts.donut.destroy();
+    
+      // Calcular totais com o cálculo correto de vagas
+      let vagasPrimeiraVez = 0;
+      let vagasRetorno = 0;
+    
+      dados.forEach(d => {
+        const vagasCalculadas = SisregUtils.calcularTotalVagas(
+          d.vagas,
+          d.dias_semana,
+          d.vigencia_inicio,
+          d.vigencia_fim
+        );
+        
+        const campoProc = String(d.procedimento || "").toUpperCase().trim();
+        const campoExame = String(d.exames || "").toUpperCase().trim();
+        
+        if (campoProc.includes("RETORNO") || campoExame.includes("RETORNO")) {
+          vagasRetorno += vagasCalculadas;
+        } else {
+          vagasPrimeiraVez += vagasCalculadas;
+        }
+      });
+    
+      const total = vagasPrimeiraVez + vagasRetorno;
+      
+      // Atualizar total de vagas
+      const totalVagasEl = document.getElementById("totalVagas");
+      if (totalVagasEl) {
+        totalVagasEl.textContent = `Total: ${SisregUtils.formatarNumero(total)} Vagas`;
+      }
+    
+      charts.donut = new Chart(canvas, {
+        type: 'doughnut',
+        data: {
+          labels: ['1ª Vez', 'Retorno'],
+          datasets: [{
+            data: [vagasPrimeiraVez, vagasRetorno],
+            backgroundColor: ['#2ecc71', '#3498db'],
+            hoverOffset: 4,
+            cutout: '60%'
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: { 
+              position: 'bottom',
+              labels: {
+                padding: 20,
+                font: {
+                  size: 13
+                }
+              }
+            },
+            tooltip: {
+              callbacks: {
+                label: (context) => {
+                  const value = context.parsed || 0;
+                  const percentage = context.dataset.data.reduce((a, b) => a + b, 0);
+                  const percent = percentage > 0 ? Math.round((value / percentage) * 100) : 0;
+                  return `${context.label}: ${SisregUtils.formatarNumero(value)} (${percent}%)`;
+                }
               }
             }
           }
-        },
-        scales: {
-          x: { title: { display: true, text: "Vagas totais" }, grid: { color: "rgba(0,0,0,0.06)" } },
-          y: { title: { display: true, text: "% Retorno" }, max: 100, beginAtZero: true, grid: { color: "rgba(0,0,0,0.06)" } }
         }
-      }
-    });
-  }
-
+      });
+    }
   /**
    * Gráfico C: Stream por horário (ofeta x hora)
    */
