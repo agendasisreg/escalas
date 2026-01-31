@@ -96,6 +96,46 @@
   text-align: center;
   color: #2c3e50;
 }
+  /* Estilos para o gráfico de evolução mensal */
+.chart-subtitle {
+  font-size: 14px;
+  color: #7f8c8d;
+  margin: -8px 0 20px 0;
+  font-style: italic;
+  text-align: center;
+}
+
+.chart-wrapper {
+  position: relative;
+  height: 400px;
+  width: 100%;
+  margin-top: 10px;
+}
+
+/* Estilos para os outros gráficos */
+.gauge-percentage {
+  font-size: 36px;
+  font-weight: bold;
+  color: #27ae60;
+  margin: 10px 0;
+  text-align: center;
+}
+
+.gauge-label {
+  font-size: 13px;
+  color: #7f8c8d;
+  text-align: center;
+  margin-top: 5px;
+  font-style: italic;
+}
+
+.donut-total {
+  font-weight: bold;
+  font-size: 18px;
+  margin: 15px 0 5px;
+  text-align: center;
+  color: #2c3e50;
+}  
 </style>
 </head>
 <body>
@@ -178,16 +218,16 @@
     <canvas id="donutChart"></canvas>
     <div id="totalVagas" class="donut-total">Total: 0 Vagas</div>
   </div>
-  <div class="card">
-    <h3>🌊 Fluxo por Horário (Stream)</h3>
-    <svg id="chartStream" style="width:100%; height: 320px;"></svg>
-  </div>
 
-  <div class="card">
-    <h3>🔀 Fluxo Dia → Profissional → Tipo (Sankey)</h3>
-    <svg id="chartSankey" style="width:100%; height: 320px;"></svg>
+  <!-- Card 3: Evolucao da oferta -->
+  <div class="card full-width">
+    <h3>📈 Evolução de Oferta Mensal</h3>
+    <p class="chart-subtitle">Acompanhamento de Vagas (1ª Vez vs. Retorno)</p>
+    <div class="chart-wrapper">
+      <canvas id="evolutionChart"></canvas>
+    </div>
   </div>
-
+  
   <div class="card full-width" id="cardInsights">
     <h3>🧠 Insights Automáticos</h3>
     <ul id="listaInsights"></ul>
