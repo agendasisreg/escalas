@@ -5,8 +5,9 @@ document.addEventListener("DOMContentLoaded", () => {
 // CONFIGURAÇÕES
 // =====================
 const resp = await fetch(`${SISREG_CONFIG.API_URL}?unidade=${encodeURIComponent(UNIDADE)}&t=${Date.now()}`);
-const UNIDADE = localStorage.getItem("unidade_selecionada") || "AGENDA TESTE";
-
+const UNIDADE = SisregUtils.getUnidade();
+const CACHE_KEY = SisregUtils.getCacheKey(UNIDADE);
+  
 // [INSERÇÃO] Preenche a identificação da unidade na tela
 const txtUnidade = document.getElementById("txtUnidade");
 if (txtUnidade) txtUnidade.innerText = UNIDADE;
