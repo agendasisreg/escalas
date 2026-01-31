@@ -161,8 +161,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   function atualizarGraficos(dados) {
     gerarGaugeChart(dados);        // NOVO: Taxa de Renovação
     gerarDonutChart(dados);        // NOVO: Composição da Escala
-    gerarStreamHorario(dados);
-    gerarSankey(dados);
+    gerarEvolucaoMensal(dados);    // NOVO: Evolução Mensal (full width)
     gerarInsights(dados); // mantido e melhorado
   }
 
@@ -320,224 +319,164 @@ document.addEventListener("DOMContentLoaded", async () => {
         }
       });
     }
-  /**
-   * Gráfico C: Stream por horário (ofeta x hora)
-   */
-  function gerarStreamHorario(dados) {
-    const svgEl = document.getElementById("chartStream");
-    if (!svgEl || typeof d3 === "undefined") return;
   
-    const svg = d3.select(svgEl);
-    svg.selectAll("*").remove();
-  
-    const w = svgEl.clientWidth || 520;
-    const h = svgEl.clientHeight || 320;
-    const margin = { top: 20, right: 20, bottom: 40, left: 50 };
-  
-    svg.attr("viewBox", `0 0 ${w} ${h}`);
-  
-    const hMin = 7;
-    const hMax = 18;
-    const hours = d3.range(hMin, hMax + 1);
-  
-    // ===== AGREGAÇÃO: vagas por hora de início =====
-    const byH = {};
-    hours.forEach(hr => byH[hr] = 0);
-  
-    dados.forEach(d => {
-      const hr = parseInt(
-        String(SisregUtils.formatarHora(d.hora_inicio) || "").split(":")[0],
-        10
-      );
-      if (byH[hr] != null) {
-        byH[hr] += Number(d.vagas) || 0;
-      }
-    });
-  
-    const data = hours.map(hr => ({
-      hr,
-      vagas: byH[hr]
-    }));
-  
-    // ===== ESCALAS =====
-    const x = d3.scaleLinear()
-      .domain([hMin, hMax])
-      .range([margin.left, w - margin.right]);
-  
-    const y = d3.scaleLinear()
-      .domain([0, d3.max(data, d => d.vagas) || 1])
-      .nice()
-      .range([h - margin.bottom, margin.top]);
-  
-    // ===== ÁREA =====
-    const area = d3.area()
-      .x(d => x(d.hr))
-      .y0(y(0))
-      .y1(d => y(d.vagas))
-      .curve(d3.curveMonotoneX);
-  
-    svg.append("path")
-      .datum(data)
-      .attr("fill", "rgba(26, 42, 108, 0.25)")
-      .attr("stroke", "rgba(26, 42, 108, 0.9)")
-      .attr("stroke-width", 2)
-      .attr("d", area);
-  
-    // ===== PONTOS =====
-    svg.append("g")
-      .selectAll("circle")
-      .data(data)
-      .enter()
-      .append("circle")
-      .attr("cx", d => x(d.hr))
-      .attr("cy", d => y(d.vagas))
-      .attr("r", 4)
-      .attr("fill", "#1a2a6c");
-  
-    // ===== EIXOS =====
-    const axisX = d3.axisBottom(x)
-      .ticks(hMax - hMin)
-      .tickFormat(d => String(d).padStart(2, "0") + ":00");
-  
-    const axisY = d3.axisLeft(y).ticks(5);
-  
-    svg.append("g")
-      .attr("transform", `translate(0,${h - margin.bottom})`)
-      .call(axisX);
-  
-    svg.append("g")
-      .attr("transform", `translate(${margin.left},0)`)
-      .call(axisY);
-  
-    // ===== TÍTULO AUXILIAR =====
-    svg.append("text")
-      .attr("x", margin.left)
-      .attr("y", margin.top - 6)
-      .attr("font-size", 12)
-      .attr("fill", "rgba(0,0,0,0.7)")
-      .text("Oferta total por horário de início");
-  }
-
-
-  /**
-   * Gráfico D: Sankey Dia → Profissional → Tipo
-   * (Top N profissionais; resto vai para “Outros”)
-   */
-  function gerarSankey(dados) {
-    const svgEl = document.getElementById("chartSankey");
-    if (!svgEl || typeof d3 === "undefined" || typeof d3.sankey !== "function") return;
-
-    const svg = d3.select(svgEl);
-    svg.selectAll("*").remove();
-
-    const w = svgEl.clientWidth || 520;
-    const h = svgEl.clientHeight || 320;
-    svg.attr("viewBox", `0 0 ${w} ${h}`);
-
-    const dias = SISREG_CONFIG.DIAS_SEMANA || ["DOM","SEG","TER","QUA","QUI","SEX","SAB"];
-
-    // Top profissionais
-    const byProf = {};
-    dados.forEach(d => {
-      const p = (d.profissional || "(Sem nome)").trim();
-      byProf[p] = (byProf[p] || 0) + (Number(d.vagas) || 0);
-    });
-    const topN = 12;
-    const topProfs = Object.entries(byProf).sort((a,b)=>b[1]-a[1]).slice(0, topN).map(x=>x[0]);
-    const setTop = new Set(topProfs);
-
-    // Nós / Links
-    const nodeMap = new Map();
-    const nodes = [];
-    const linksMap = new Map(); // key -> value
-
-    const getNode = (name) => {
-      if (!nodeMap.has(name)) {
-        nodeMap.set(name, nodes.length);
-        nodes.push({ name });
-      }
-      return nodeMap.get(name);
-    };
-
-    const addLink = (s, t, v) => {
-      const key = `${s}=>${t}`;
-      linksMap.set(key, (linksMap.get(key) || 0) + v);
-    };
-
-    dados.forEach(d => {
-      const diasSel = SisregUtils.extrairDias(d.dias_semana);
-      const dia = diasSel[0] || "SEG";
-      const profRaw = (d.profissional || "(Sem nome)").trim();
-      const prof = setTop.has(profRaw) ? profRaw : "Outros";
-      const v = Number(d.vagas) || 0;
-
-      const campoProc = String(d.procedimento || "").toUpperCase().trim();
-      const campoExame = String(d.exames || "").toUpperCase().trim();
-      const tipo = (campoProc.includes("RETORNO") || campoExame.includes("RETORNO")) ? "Retorno" : "1ª Vez";
-
-      addLink(dia, prof, v);
-      addLink(prof, tipo, v);
-    });
-
-    const links = Array.from(linksMap.entries()).map(([k, value]) => {
-      const [s, t] = k.split("=>");
-      return { source: getNode(s), target: getNode(t), value };
-    });
-
-    // Layout Sankey
-    const sankey = d3.sankey()
-      .nodeWidth(16)
-      .nodePadding(10)
-      .extent([[10, 10], [w - 10, h - 10]]);
-
-    const graph = sankey({
-      nodes: nodes.map(d => Object.assign({}, d)),
-      links: links.map(d => Object.assign({}, d))
-    });
-
-    // Links
-    svg.append("g")
-      .attr("fill", "none")
-      .selectAll("path")
-      .data(graph.links)
-      .enter()
-      .append("path")
-      .attr("d", d3.sankeyLinkHorizontal())
-      .attr("stroke", "rgba(253,187,45,0.55)")
-      .attr("stroke-width", d => Math.max(1, d.width))
-      .attr("opacity", 0.85)
-      .on("mousemove", (event, d) => {
-        const s = graph.nodes[d.source.index]?.name || "";
-        const t = graph.nodes[d.target.index]?.name || "";
-        showTip(`<strong>${s}</strong> → <strong>${t}</strong><br/>Vagas: <strong>${d.value}</strong>`, event.clientX, event.clientY);
-      })
-      .on("mouseleave", hideTip);
-
-    // Nodes
-    const node = svg.append("g")
-      .selectAll("g")
-      .data(graph.nodes)
-      .enter()
-      .append("g");
-
-    node.append("rect")
-      .attr("x", d => d.x0)
-      .attr("y", d => d.y0)
-      .attr("height", d => d.y1 - d.y0)
-      .attr("width", d => d.x1 - d.x0)
-      .attr("fill", "rgba(26,42,108,0.75)")
-      .attr("stroke", "rgba(0,0,0,0.10)");
-
-    node.append("text")
-      .attr("x", d => (d.x0 < w/2 ? d.x1 + 6 : d.x0 - 6))
-      .attr("y", d => (d.y0 + d.y1)/2)
-      .attr("dy", "0.35em")
-      .attr("text-anchor", d => (d.x0 < w/2 ? "start" : "end"))
-      .attr("font-size", 10)
-      .attr("fill", "rgba(0,0,0,0.72)")
-      .text(d => d.name);
-  }
-
+    /**
+     * Gráfico 3: Evolução de Oferta Mensal (1ª Vez vs Retorno)
+     */
+    function gerarEvolucaoMensal(dados) {
+      const canvas = document.getElementById("evolutionChart");
+      if (!canvas) return;
+      if (charts.evolucaoMensal) charts.evolucaoMensal.destroy();
+    
+      // Agregar dados por mês
+      const mesesMap = {};
+      
+      dados.forEach(d => {
+        // Extrair mês/ano da vigência inicial
+        const dt = SisregUtils.formatarDataBR(d.vigencia_inicio);
+        if (!dt) return;
+        
+        const partes = dt.split("/");
+        if (partes.length < 2) return;
+        
+        // Formato: "Jan/2026"
+        const mesNome = ["Jan", "Fev", "Mar", "Abr", "Mai", "Jun", "Jul", "Ago", "Set", "Out", "Nov", "Dez"];
+        const mesIdx = parseInt(partes[1]) - 1;
+        const mesAno = `${mesNome[mesIdx]}/${partes[2]}`;
+        
+        if (!mesesMap[mesAno]) {
+          mesesMap[mesAno] = { v1: 0, vr: 0 };
+        }
+        
+        // Calcular vagas corretamente
+        const vagasCalculadas = SisregUtils.calcularTotalVagas(
+          d.vagas,
+          d.dias_semana,
+          d.vigencia_inicio,
+          d.vigencia_fim
+        );
+        
+        // Classificar como 1ª vez ou retorno
+        const campoProc = String(d.procedimento || "").toUpperCase().trim();
+        const campoExame = String(d.exames || "").toUpperCase().trim();
+        
+        if (campoProc.includes("RETORNO") || campoExame.includes("RETORNO")) {
+          mesesMap[mesAno].vr += vagasCalculadas;
+        } else {
+          mesesMap[mesAno].v1 += vagasCalculadas;
+        }
+      });
+      
+      // Ordenar meses cronologicamente
+      const mesesOrdenados = Object.keys(mesesMap).sort((a, b) => {
+        const [ma, aa] = a.split("/");
+        const [mb, ab] = b.split("/");
+        const idxA = ["Jan","Fev","Mar","Abr","Mai","Jun","Jul","Ago","Set","Out","Nov","Dez"].indexOf(ma);
+        const idxB = ["Jan","Fev","Mar","Abr","Mai","Jun","Jul","Ago","Set","Out","Nov","Dez"].indexOf(mb);
+        return (aa - ab) || (idxA - idxB);
+      });
+      
+      // Preparar dados para o gráfico
+      const dados1aVez = mesesOrdenados.map(m => mesesMap[m].v1);
+      const dadosRetorno = mesesOrdenados.map(m => mesesMap[m].vr);
+      
+      // Criar gráfico
+      charts.evolucaoMensal = new Chart(canvas, {
+        type: 'line',
+        data: {
+          labels: mesesOrdenados,
+          datasets: [
+            {
+              label: 'Vagas de Retorno',
+              data: dadosRetorno,
+              borderColor: '#3498db',
+              backgroundColor: 'rgba(52, 152, 219, 0.5)',
+              fill: true,
+              tension: 0.4,
+              borderWidth: 3,
+              pointRadius: 5,
+              pointHoverRadius: 7,
+              pointBackgroundColor: '#fff',
+              pointBorderColor: '#3498db',
+              pointBorderWidth: 2
+            },
+            {
+              label: 'Vagas 1ª Vez',
+              data: dados1aVez,
+              borderColor: '#2ecc71',
+              backgroundColor: 'rgba(46, 204, 113, 0.5)',
+              fill: true,
+              tension: 0.4,
+              borderWidth: 3,
+              pointRadius: 5,
+              pointHoverRadius: 7,
+              pointBackgroundColor: '#fff',
+              pointBorderColor: '#2ecc71',
+              pointBorderWidth: 2
+            }
+          ]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          scales: {
+            y: { 
+              beginAtZero: true,
+              grid: { color: "rgba(0,0,0,0.06)" },
+              title: { 
+                display: true, 
+                text: 'Total de Vagas',
+                font: { size: 13, weight: 'bold' }
+              },
+              ticks: {
+                font: { size: 12 }
+              }
+            },
+            x: {
+              grid: { display: false },
+              ticks: {
+                font: { size: 12, weight: 'bold' }
+              }
+            }
+          },
+          plugins: {
+            legend: { 
+              position: 'top',
+              labels: {
+                padding: 20,
+                font: { size: 13, weight: 'bold' },
+                usePointStyle: true,
+                pointStyle: 'circle'
+              }
+            },
+            tooltip: {
+              mode: 'index',
+              intersect: false,
+              backgroundColor: 'rgba(0,0,0,0.8)',
+              titleFont: { size: 14, weight: 'bold' },
+              bodyFont: { size: 13 },
+              padding: 12,
+              callbacks: {
+                label: (context) => {
+                  const value = context.parsed.y || 0;
+                  const totalMes = dados1aVez[context.dataIndex] + dadosRetorno[context.dataIndex];
+                  const percentual = totalMes > 0 ? Math.round((value / totalMes) * 100) : 0;
+                  return `${context.dataset.label}: ${SisregUtils.formatarNumero(value)} (${percentual}%)`;
+                }
+              }
+            }
+          },
+          interaction: {
+            mode: 'index',
+            intersect: false
+          },
+          hover: {
+            mode: 'index',
+            intersect: false
+          }
+        }
+      });
+    }
   /**
    * Insights Automáticos — mantido (melhorado)
    */
