@@ -162,6 +162,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     gerarGaugeChart(dados);        // NOVO: Taxa de Renovação
     gerarDonutChart(dados);        // NOVO: Composição da Escala
     gerarEvolucaoMensal(dados);    // NOVO: Evolução Mensal (full width)
+    gerarProcedimentos(dados);     // NOVO: Vagas por procedimentos
     gerarInsights(dados); // mantido e melhorado
   }
 
@@ -319,60 +320,59 @@ document.addEventListener("DOMContentLoaded", async () => {
         }
       });
     }
-  
+      
     /**
      * Gráfico 3: Evolução de Oferta Mensal (1ª Vez vs Retorno)
      */
-      function gerarEvolucaoMensal(dados) {
-        const canvas = document.getElementById("evolutionChart");
-        if (!canvas) return;
-        if (charts.evolucaoMensal) charts.evolucaoMensal.destroy();
-      
-        // Agregar dados por mês
-        const mesesMap = {};
-        const mesNome = ["Jan", "Fev", "Mar", "Abr", "Mai", "Jun", "Jul", "Ago", "Set", "Out", "Nov", "Dez"];
-      
-        dados.forEach(d => {
-          // CORREÇÃO 1: Use parseData para converter para objeto Date
-          const dataInicio = SisregUtils.parseData(d.vigencia_inicio);
-          if (!dataInicio) return;
-          
-          // CORREÇÃO 2: Extraia mês diretamente do objeto Date
-          const mesIdx = dataInicio.getMonth(); // 0-11 (não precisa -1)
-          const ano = dataInicio.getFullYear();
-          const mesAno = `${mesNome[mesIdx]}/${ano}`;
-          
-          if (!mesesMap[mesAno]) {
-            mesesMap[mesAno] = { v1: 0, vr: 0 };
-          }
-          
-          // Calcular vagas corretamente
-          const vagasCalculadas = SisregUtils.calcularTotalVagas(
-            d.vagas,
-            d.dias_semana,
-            d.vigencia_inicio,
-            d.vigencia_fim
-          );
-          
-          // CORREÇÃO 3: Melhore a classificação de retorno
-          const campoProc = String(d.procedimento || "").toUpperCase().trim();
-          const campoExame = String(d.exames || "").toUpperCase().trim();
-          
-          // Procura "RETORNO" em qualquer posição da string
-          if (campoProc.includes("RETORNO") || campoExame.includes("RETORNO")) {
-            mesesMap[mesAno].vr += vagasCalculadas;
-          } else {
-            mesesMap[mesAno].v1 += vagasCalculadas;
-          }
-        });  
+    function gerarEvolucaoMensal(dados) {
+      const canvas = document.getElementById("evolutionChart");
+      if (!canvas) return;
+      if (charts.evolucaoMensal) charts.evolucaoMensal.destroy();
+    
+      // Agregar dados por mês
+      const mesesMap = {};
+      const mesNome = ["Jan", "Fev", "Mar", "Abr", "Mai", "Jun", "Jul", "Ago", "Set", "Out", "Nov", "Dez"];
+    
+      dados.forEach(d => {
+        // CORREÇÃO: Use parseData e valide a data
+        const dataInicio = SisregUtils.parseData(d.vigencia_inicio);
+        if (!dataInicio || isNaN(dataInicio)) return;
         
+        // CORREÇÃO CRÍTICA: Use métodos UTC para evitar fuso horário
+        const mesIdx = dataInicio.getUTCMonth(); // 0-11
+        const ano = dataInicio.getUTCFullYear();
+        const mesAno = `${mesNome[mesIdx]}/${ano}`;
+        
+        if (!mesesMap[mesAno]) {
+          mesesMap[mesAno] = { v1: 0, vr: 0 };
+        }
+        
+        // Calcular vagas corretamente
+        const vagasCalculadas = SisregUtils.calcularTotalVagas(
+          d.vagas,
+          d.dias_semana,
+          d.vigencia_inicio,
+          d.vigencia_fim
+        );
+        
+        // Classificação de retorno
+        const campoProc = String(d.procedimento || "").toUpperCase().trim();
+        const campoExame = String(d.exames || "").toUpperCase().trim();
+        
+        if (campoProc.includes("RETORNO") || campoExame.includes("RETORNO")) {
+          mesesMap[mesAno].vr += vagasCalculadas;
+        } else {
+          mesesMap[mesAno].v1 += vagasCalculadas;
+        }
+      });
+      
       // Ordenar meses cronologicamente
       const mesesOrdenados = Object.keys(mesesMap).sort((a, b) => {
         const [ma, aa] = a.split("/");
         const [mb, ab] = b.split("/");
-        const idxA = ["Jan","Fev","Mar","Abr","Mai","Jun","Jul","Ago","Set","Out","Nov","Dez"].indexOf(ma);
-        const idxB = ["Jan","Fev","Mar","Abr","Mai","Jun","Jul","Ago","Set","Out","Nov","Dez"].indexOf(mb);
-        return (aa - ab) || (idxA - idxB);
+        const idxA = mesNome.indexOf(ma);
+        const idxB = mesNome.indexOf(mb);
+        return (parseInt(aa) - parseInt(ab)) || (idxA - idxB);
       });
       
       // Preparar dados para o gráfico
@@ -476,6 +476,168 @@ document.addEventListener("DOMContentLoaded", async () => {
         }
       });
     }
+
+      /**
+     * Gráfico 4: Oferta por Procedimento (Circle Packing com D3.js)
+     */
+    function gerarProcedimentos(dados) {
+      // Verifica se D3 está carregado
+      if (typeof d3 === 'undefined') {
+        console.error('D3.js não está carregado');
+        return;
+      }
+    
+      const container = document.getElementById('chartProcedimentos');
+      if (!container) return;
+    
+      // Limpa o container antes de redesenhar
+      container.innerHTML = '';
+    
+      // Agrega dados por procedimento com cálculo correto de vagas
+      const procedimentoMap = {};
+      
+      dados.forEach(d => {
+        const proc = (d.procedimento || "Outros").trim();
+        if (!proc || proc === "") return;
+        
+        // Calcula vagas corretamente considerando dias e vigência
+        const vagasCalculadas = SisregUtils.calcularTotalVagas(
+          d.vagas,
+          d.dias_semana,
+          d.vigencia_inicio,
+          d.vigencia_fim
+        );
+        
+        procedimentoMap[proc] = (procedimentoMap[proc] || 0) + vagasCalculadas;
+      });
+    
+      // Converte para array e ordena
+      let dataRows = Object.entries(procedimentoMap)
+        .map(([name, value]) => ({ 
+          name: name.length > 25 ? name.substring(0, 22) + "..." : name,
+          value: value 
+        }))
+        .sort((a, b) => b.value - a.value)
+        .slice(0, 12); // Limita aos top 12 para melhor visualização
+    
+      // Se não houver dados, mostra mensagem
+      if (dataRows.length === 0) {
+        container.innerHTML = '<p class="no-data-message">Nenhum dado disponível para este período</p>';
+        return;
+      }
+    
+      // Configurações do gráfico
+      const width = container.clientWidth;
+      const height = 320;
+      const padding = 8;
+    
+      // Cria SVG
+      const svg = d3.select(container)
+        .append("svg")
+        .attr("width", width)
+        .attr("height", height)
+        .append("g")
+        .attr("transform", `translate(${padding},${padding})`);
+    
+      // Cria hierarquia
+      const root = d3.hierarchy({ children: dataRows })
+        .sum(d => d.value)
+        .sort((a, b) => b.value - a.value);
+    
+      // Layout de empacotamento
+      const pack = d3.pack()
+        .size([width - padding * 2, height - padding * 2])
+        .padding(5);
+    
+      pack(root);
+    
+      // Paleta de cores profissionais
+      const cores = [
+        "#1a2a6c", "#4CAF50", "#fdbb2d", "#e24a3b", 
+        "#2196F3", "#9c27b0", "#ff9800", "#3f51b5",
+        "#009688", "#795548", "#607d8b", "#e91e63"
+      ];
+      
+      const color = d3.scaleOrdinal().range(cores);
+    
+      // Cria nós
+      const nodes = svg.selectAll(".node")
+        .data(root.leaves())
+        .enter()
+        .append("g")
+        .attr("class", "node")
+        .attr("transform", d => `translate(${d.x},${d.y})`);
+    
+      // Círculos com efeito hover
+      nodes.append("circle")
+        .attr("r", d => d.r)
+        .style("fill", (d, i) => color(i))
+        .style("cursor", "pointer")
+        .on("mouseover", function(event, d) {
+          d3.select(this)
+            .transition()
+            .duration(200)
+            .attr("r", d.r * 1.05)
+            .style("opacity", 0.95);
+          
+          // Tooltip manual
+          const tooltip = d3.select("#d3-tooltip");
+          if (tooltip.empty()) {
+            d3.select("body").append("div")
+              .attr("id", "d3-tooltip")
+              .style("position", "absolute")
+              .style("background", "rgba(0,0,0,0.85)")
+              .style("color", "white")
+              .style("padding", "10px 15px")
+              .style("border-radius", "8px")
+              .style("font-family", "'Inter', sans-serif")
+              .style("font-size", "14px")
+              .style("pointer-events", "none")
+              .style("z-index", "9999");
+          }
+          
+          d3.select("#d3-tooltip")
+            .style("left", (event.pageX + 15) + "px")
+            .style("top", (event.pageY - 30) + "px")
+            .html(`<strong>${d.data.name}</strong><br/>${SisregUtils.formatarNumero(d.data.value)} vagas`);
+        })
+        .on("mousemove", function(event) {
+          d3.select("#d3-tooltip")
+            .style("left", (event.pageX + 15) + "px")
+            .style("top", (event.pageY - 30) + "px");
+        })
+        .on("mouseout", function() {
+          d3.select(this)
+            .transition()
+            .duration(200)
+            .attr("r", d => d.r)
+            .style("opacity", 1);
+          
+          d3.select("#d3-tooltip").remove();
+        });
+    
+      // Texto dentro dos círculos
+      nodes.append("text")
+        .attr("dy", ".2em")
+        .style("font-size", d => {
+          const baseSize = Math.min(d.r / 3.5, 16);
+          return baseSize > 8 ? baseSize + "px" : "0px";
+        })
+        .style("fill", "white")
+        .style("font-weight", "700")
+        .text(d => d.data.name)
+        .append("tspan")
+        .attr("x", 0)
+        .attr("dy", "1.4em")
+        .style("font-size", d => {
+          const baseSize = Math.min(d.r / 4, 14);
+          return baseSize > 7 ? baseSize + "px" : "0px";
+        })
+        .style("fill", "rgba(255,255,255,0.9)")
+        .text(d => SisregUtils.formatarNumero(d.data.value));
+    }
+
+  
   /**
    * Insights Automáticos — mantido (melhorado)
    */
