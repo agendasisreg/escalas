@@ -4,12 +4,12 @@ document.addEventListener("DOMContentLoaded", () => {
 // =====================
 // CONFIGURAÇÕES
 // =====================
-const GOOGLE_SHEETS_URL = "https://script.google.com/macros/s/AKfycbzrzuSOFKgHFbLpjKOpGqzK7gAAIK3ucbDYgsTvDi1RoFcClepilJwRtF0GTFteOFjfBQ/exec";
-const UNIDADE_ATUAL = localStorage.getItem("unidade_selecionada") || "AGENDA TESTE";
+const resp = await fetch(`${SISREG_CONFIG.API_URL}?unidade=${encodeURIComponent(UNIDADE)}&t=${Date.now()}`);
+const UNIDADE = localStorage.getItem("unidade_selecionada") || "AGENDA TESTE";
 
 // [INSERÇÃO] Preenche a identificação da unidade na tela
 const txtUnidade = document.getElementById("txtUnidade");
-if (txtUnidade) txtUnidade.innerText = UNIDADE_ATUAL;
+if (txtUnidade) txtUnidade.innerText = UNIDADE;
 
 let profissionais = [];
 let procedimentos = [];
@@ -108,7 +108,7 @@ let csvContent = "data:text/csv;charset=utf-8,"
 const encodedUri = encodeURI(csvContent);
 const link = document.createElement("a");
 link.setAttribute("href", encodedUri);
-link.setAttribute("download", `Escalas_${UNIDADE_ATUAL}_${new Date().toLocaleDateString()}.csv`);
+link.setAttribute("download", `Escalas_${UNIDADE}_${new Date().toLocaleDateString()}.csv`);
 document.body.appendChild(link);
 link.click();
 document.body.removeChild(link);
@@ -122,7 +122,7 @@ btnExport.disabled = true;
 let erros = 0;
 for (let item of escalas) {
 try {
-await fetch(GOOGLE_SHEETS_URL, {
+await fetch(resp, {
 method: "POST",
 mode: "no-cors",
 headers: { "Content-Type": "text/plain" },
@@ -174,7 +174,7 @@ function obterCodigo(p) { return p.cod_int || p["cod int"] || ""; }
 fetch("data/profissionais.json").then(r => r.json())
 .then(d => {
 // Filtro de profissionais por unidade
-profissionais = d.filter(p => p.unidade === UNIDADE_ATUAL);
+profissionais = d.filter(p => p.unidade === UNIDADE);
 });
 
 fetch("data/procedimentos_exames.json").then(r => r.json()).then(d => procedimentos = d);
@@ -281,7 +281,7 @@ hora_fim: horaFimInput.value,
 vagas: vagasInput.value,
 vigencia_inicio: vigInicioInput.value,
 vigencia_fim: vigFimInput.value,
-unidade: UNIDADE_ATUAL
+unidade: UNIDADE
 };
 
 let locais = JSON.parse(localStorage.getItem("escalas_salvas") || "[]");
