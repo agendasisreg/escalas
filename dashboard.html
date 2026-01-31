@@ -71,6 +71,31 @@
   max-width: 260px;
   box-shadow: 0 10px 25px rgba(0,0,0,.18);
 }
+
+  /* Estilos para os novos gráficos */
+.gauge-percentage {
+  font-size: 36px;
+  font-weight: bold;
+  color: #27ae60;
+  margin: 10px 0;
+  text-align: center;
+}
+
+.gauge-label {
+  font-size: 13px;
+  color: #7f8c8d;
+  text-align: center;
+  margin-top: 5px;
+  font-style: italic;
+}
+
+.donut-total {
+  font-weight: bold;
+  font-size: 18px;
+  margin: 15px 0 5px;
+  text-align: center;
+  color: #2c3e50;
+}
 </style>
 </head>
 <body>
@@ -141,15 +166,18 @@
 <section class="dashboard-grid">
 
   <div class="card">
-    <h3>🌀 Padrão de Oferta (Radial)</h3>
-    <svg id="chartRadial" style="width:100%; height: 320px;"></svg>
+    <h3>🔄 Taxa de Renovação</h3>
+    <canvas id="gaugeChart"></canvas>
+    <div id="percText" class="gauge-percentage">0%</div>
+    <p class="gauge-label">Capacidade de absorção de novos pacientes</p>
   </div>
-
+  
+  <!-- Card 2: Composição da Escala (substitui "Oferta por Horário") -->
   <div class="card">
-    <h3>⚖️ Eficiência por Profissional (Bubble)</h3>
-    <canvas id="chartEficiência"></canvas>
+    <h3>📊 Composição da Escala</h3>
+    <canvas id="donutChart"></canvas>
+    <div id="totalVagas" class="donut-total">Total: 0 Vagas</div>
   </div>
-
   <div class="card">
     <h3>🌊 Fluxo por Horário (Stream)</h3>
     <svg id="chartStream" style="width:100%; height: 320px;"></svg>
