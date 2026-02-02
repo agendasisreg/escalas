@@ -3,10 +3,11 @@
 // ============================================================
 
 document.addEventListener("DOMContentLoaded", async () => {
-
-  // Bloqueio de acesso se não estiver logado
-  protegerPagina(SISREG_CONFIG.PAGINAS.INDEX);
-
+    if (!SisregUtils.isLogado()) {
+      SisregUtils.clearSessao();
+      window.location.href = SISREG_CONFIG.PAGINAS.INDEX;
+      return;
+    }
   
   // ==================== INICIALIZAÇÃO ====================
   
@@ -986,7 +987,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   
   // Logout
   document.getElementById("btnLogout").onclick = () => {
-    clearSessao();
+    SisregUtils.clearSessao();
     window.location.href = SISREG_CONFIG.PAGINAS.INDEX;
   };
   
