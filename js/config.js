@@ -12,7 +12,7 @@ const SISREG_CONFIG = {
   // ==================== SISTEMA ====================
   SISTEMA: {
     NOME: "Agenda SISREG",
-    SUBTITULO: "Sistema de Gestão de Escalas",
+    SUBTITULO: "Complexo Regulador do Amazonas",
     VERSAO: "2.0",
     ANO: "2026"
   },
@@ -111,7 +111,7 @@ const SISREG_CONFIG = {
       BACK: "btn-main btn-back"
     },
     TEXTOS: {
-      SINCRONIZAR: "🔄 Sincronizar Sheets",
+      SINCRONIZAR: "🔄 Sincronizar",
       SINCRONIZANDO: "⌛ Sincronizando...",
       EXPORTAR_PDF: "📄 Exportar PDF",
       NOVA_ESCALA: "➕ Nova Escala",
