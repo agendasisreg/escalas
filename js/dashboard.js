@@ -652,7 +652,6 @@ document.addEventListener("DOMContentLoaded", async () => {
         .style("paint-order", "stroke")
         .style("stroke", d => isLightColor(d._color) ? "rgba(255,255,255,0.9)" : "rgba(0,0,0,0.5)")
         .style("stroke-width", "4px")
-        .style("font-weight", "700")
         .text(d => d.data.name)
         .append("tspan")
         .attr("x", 0)
