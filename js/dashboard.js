@@ -502,7 +502,6 @@ document.addEventListener("DOMContentLoaded", async () => {
       if (t.includes("ORTOP")) return "ORTOPEDIA";
       if (t.includes("DERMAT")) return "DERMATOLOGIA";
       if (t.includes("GINECO")) return "GINECOLOGIA";
-      if (t.includes("PEDIAT")) return "PEDIATRIA";
       if (t.includes("NEURO")) return "NEUROLOGIA";
       if (t.includes("PSIQUI")) return "PSIQUIATRIA";
       if (t.includes("OFTALMO")) return "OFTALMOLOGIA";
