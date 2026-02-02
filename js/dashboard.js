@@ -554,9 +554,18 @@ document.addEventListener("DOMContentLoaded", async () => {
     
       // Paleta de cores profissionais
       const cores = [
-        "#1a2a6c", "#4CAF50", "#fdbb2d", "#e24a3b", 
-        "#2196F3", "#9c27b0", "#ff9800", "#3f51b5",
-        "#009688", "#795548", "#607d8b", "#e91e63"
+        "#1a2a6c", // azul principal
+        "#2ecc71", // verde
+        "#f39c12", // laranja
+        "#3498db", // azul claro
+        "#9b59b6", // roxo
+        "#e74c3c", // vermelho
+        "#16a085", // verde azulado
+        "#d35400", // laranja escuro
+        "#2980b9", // azul médio
+        "#27ae60", // verde médio
+        "#8e44ad", // roxo escuro
+        "#c0392b"  // vermelho escuro
       ];
       
       const color = d3.scaleOrdinal().range(cores);
@@ -726,11 +735,11 @@ document.addEventListener("DOMContentLoaded", async () => {
   
     // Cores por faixa (sem gradiente, sem tons da mesma cor)
     function colorByValue(v) {
-      if (v >= 180) return "#E11D48";  // rosa/vermelho forte
-      if (v >= 140) return "#F97316";  // laranja
-      if (v >= 100) return "#EAB308";  // amarelo
-      if (v >= 70)  return "#22C55E";  // verde
-      return "#7C3AED";                // roxo
+      if (v >= 180) return "#b91c1c"; // vermelho forte
+      if (v >= 140) return "#ea580c"; // laranja
+      if (v >= 100) return "#ca8a04"; // amarelo
+      if (v >= 70)  return "#15803d"; // verde
+      return "#4338ca";               // azul/roxo
     }
   
     // Fallback (um jaleco simples em SVG)
