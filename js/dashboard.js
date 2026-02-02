@@ -986,6 +986,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   
   // Logout
   document.getElementById("btnLogout").onclick = () => {
+    clearSessao();
     window.location.href = SISREG_CONFIG.PAGINAS.INDEX;
   };
   
