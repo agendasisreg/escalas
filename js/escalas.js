@@ -3,6 +3,7 @@
 // ============================================================
 
 document.addEventListener("DOMContentLoaded", () => {
+  SisregUtils.protegerPagina("USER");
   
   // =====================
   // CONFIGURAÇÕES CENTRALIZADAS
