@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Dashboard Master | Agenda SISREG</title>
+
+  <link rel="stylesheet" href="css/theme.css">
+  <link rel="stylesheet" href="css/style.css">
+
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://d3js.org/d3.v7.min.js"></script>
+</head>
+
+<body>
+
+<header class="dash-header">
+  <h1>📊 Dashboard Geral — Todas as Unidades</h1>
+  <p>Visão consolidada do SISREG</p>
+</header>
+
+<!-- FILTROS -->
+<section class="filter-section" style="display:flex;gap:16px;flex-wrap:wrap;">
+  
+  <!-- FILTRO DE UNIDADE (MASTER) -->
+  <div>
+    <label>Unidade:</label>
+    <select id="filtroUnidade">
+      <option value="ALL">Todas as unidades</option>
+    </select>
+  </div>
+
+  <!-- FILTRO DE MÊS (JÁ EXISTENTE) -->
+  <div>
+    <label>Mês:</label>
+    <select id="filtroMes">
+      <option value="todos">Todos</option>
+      <option value="01">Jan</option>
+      <option value="02">Fev</option>
+      <option value="03">Mar</option>
+      <option value="04">Abr</option>
+      <option value="05">Mai</option>
+      <option value="06">Jun</option>
+      <option value="07">Jul</option>
+      <option value="08">Ago</option>
+      <option value="09">Set</option>
+      <option value="10">Out</option>
+      <option value="11">Nov</option>
+      <option value="12">Dez</option>
+    </select>
+  </div>
+
+</section>
+
+<!-- KPIs -->
+<section class="kpi-container">
+  <div class="kpi-card"><h3>Total de Vagas</h3><p id="kpiVagas">0</p></div>
+  <div class="kpi-card"><h3>% Retorno</h3><p id="kpiRetorno">0%</p></div>
+  <div class="kpi-card"><h3>Profissionais</h3><p id="kpiProfissionais">0</p></div>
+  <div class="kpi-card"><h3>Procedimentos</h3><p id="kpiProcedimentos">0</p></div>
+</section>
+
+<!-- ÁREA DOS GRÁFICOS -->
+<main class="container" id="dashboardArea">
+  <!-- reutiliza exatamente os mesmos cards e canvases -->
+  <!-- NÃO muda nada estrutural aqui -->
+</main>
+
+<footer id="footerCreditos"></footer>
+
+<script src="js/config.js"></script>
+<script src="js/dashboard.js"></script>
+
+</body>
+</html>
