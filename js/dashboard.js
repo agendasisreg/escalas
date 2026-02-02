@@ -492,6 +492,27 @@ document.addEventListener("DOMContentLoaded", async () => {
       /**
      * Gráfico 4: Oferta por Procedimento (Circle Packing com D3.js)
      */
+
+    function normalizarEspecialidade(texto) {
+      if (!texto) return "OUTROS";
+    
+      const t = texto.toUpperCase();
+    
+      if (t.includes("CARDIO")) return "CARDIOLOGIA";
+      if (t.includes("ORTOP")) return "ORTOPEDIA";
+      if (t.includes("DERMAT")) return "DERMATOLOGIA";
+      if (t.includes("GINECO")) return "GINECOLOGIA";
+      if (t.includes("PEDIAT")) return "PEDIATRIA";
+      if (t.includes("NEURO")) return "NEUROLOGIA";
+      if (t.includes("PSIQUI")) return "PSIQUIATRIA";
+      if (t.includes("OFTALMO")) return "OFTALMOLOGIA";
+      if (t.includes("ENDOCR")) return "ENDOCRINOLOGIA";
+      if (t.includes("GASTRO")) return "GASTROENTEROLOGIA";
+    
+      return "OUTROS";
+    }
+
+  
     function gerarProcedimentos(dados) {
       // Verifica se D3 está carregado
       if (typeof d3 === 'undefined') {
@@ -509,8 +530,7 @@ document.addEventListener("DOMContentLoaded", async () => {
       const procedimentoMap = {};
       
       dados.forEach(d => {
-        const proc = (d.procedimento || "Outros").trim();
-        if (!proc || proc === "") return;
+        const especialidade = normalizarEspecialidade(d.procedimento);
         
         // Calcula vagas corretamente considerando dias e vigência
         const vagasCalculadas = SisregUtils.calcularTotalVagas(
@@ -520,7 +540,8 @@ document.addEventListener("DOMContentLoaded", async () => {
           d.vigencia_fim
         );
         
-        procedimentoMap[proc] = (procedimentoMap[proc] || 0) + vagasCalculadas;
+        procedimentoMap[especialidade] =
+          (procedimentoMap[especialidade] || 0) + vagasCalculadas;
       });
     
       // Converte para array e ordena
