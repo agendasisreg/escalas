@@ -703,4 +703,31 @@ class SisregUtils {
   }
   
   // ==================== FIM DA CLASSE ====================
+
+    // ====================
+    // CONTROLE DE SESSÃO
+    // ====================
+  
+    static setSessao(sessao) {
+      localStorage.setItem("SISREG_SESSAO", JSON.stringify(sessao));
+    }
+  
+    static getSessao() {
+      return JSON.parse(localStorage.getItem("SISREG_SESSAO") || "{}");
+    }
+  
+    static clearSessao() {
+      localStorage.removeItem("SISREG_SESSAO");
+    }
+  
+    static isLogado() {
+      const s = this.getSessao();
+      return !!(s.token && s.expiresAt && Date.now() < s.expiresAt);
+    }
+  
+    static isMaster() {
+      const s = this.getSessao();
+      return this.isLogado() && s.perfil === "MASTER";
+    }
+
 }
