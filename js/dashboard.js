@@ -22,6 +22,17 @@ document.addEventListener("DOMContentLoaded", async () => {
   let charts = {}; // Armazena instâncias dos gráficos
   
   // ==================== FUNÇÕES PRINCIPAIS ====================
+
+    function isLightColor(hex) {
+      if (!hex) return false;
+      const c = hex.replace('#','');
+      const r = parseInt(c.substring(0,2),16);
+      const g = parseInt(c.substring(2,4),16);
+      const b = parseInt(c.substring(4,6),16);
+      // luminância perceptiva
+      return (0.2126*r + 0.7152*g + 0.0722*b) > 160;
+    }
+
   
   /**
    * Atualiza os cards KPI com base nos dados
@@ -529,8 +540,8 @@ document.addEventListener("DOMContentLoaded", async () => {
     
       // Configurações do gráfico
       const width = container.clientWidth;
-      const height = 320;
-      const padding = 8;
+      const height = container.clientHeight;
+      const padding = 16;
     
       // Cria SVG
       const svg = d3.select(container)
@@ -548,7 +559,7 @@ document.addEventListener("DOMContentLoaded", async () => {
       // Layout de empacotamento
       const pack = d3.pack()
         .size([width - padding * 2, height - padding * 2])
-        .padding(5);
+        .padding(12);
     
       pack(root);
     
@@ -581,7 +592,10 @@ document.addEventListener("DOMContentLoaded", async () => {
       // Círculos com efeito hover
       nodes.append("circle")
         .attr("r", d => d.r)
-        .style("fill", (d, i) => color(i))
+        .style("fill", (d, i) => {
+          d._color = color(i);
+          return d._color;
+        })
         .style("cursor", "pointer")
         .on("mouseover", function(event, d) {
           d3.select(this)
@@ -633,7 +647,11 @@ document.addEventListener("DOMContentLoaded", async () => {
           const baseSize = Math.min(d.r / 3.5, 16);
           return baseSize > 8 ? baseSize + "px" : "0px";
         })
-        .style("fill", "white")
+        .style("fill", d => isLightColor(d._color) ? "#0f172a" : "#ffffff")
+        .style("font-weight", "800")
+        .style("paint-order", "stroke")
+        .style("stroke", d => isLightColor(d._color) ? "rgba(255,255,255,0.9)" : "rgba(0,0,0,0.5)")
+        .style("stroke-width", "4px")
         .style("font-weight", "700")
         .text(d => d.data.name)
         .append("tspan")
@@ -698,8 +716,8 @@ document.addEventListener("DOMContentLoaded", async () => {
   
     // Configurações do gráfico
     const width = container.clientWidth;
-    const height = 320;
-    const padding = 60;
+    const height = container.clientHeight;
+    const padding = 24;
   
     // Cria SVG
     const svg = d3.select(container)
@@ -730,8 +748,8 @@ document.addEventListener("DOMContentLoaded", async () => {
   
     // Layout de empacotamento
     d3.pack()
-      .size([width - 100, height - 100])
-      .padding(60)(root);
+      .size([width - padding * 2, height - padding * 2])
+      .padding(32)(root);
   
     // Cores por faixa (sem gradiente, sem tons da mesma cor)
     function colorByValue(v) {
@@ -804,6 +822,11 @@ document.addEventListener("DOMContentLoaded", async () => {
       .attr("class", "value")
       .attr("y", 6)
       .style("font-size", d => `${Math.max(14, d.r/2.2)}px`)
+      .style("fill", d => isLightColor(colorByValue(d.data.value)) ? "#0f172a" : "#ffffff")
+      .style("paint-order", "stroke")
+      .style("stroke", d => isLightColor(colorByValue(d.data.value)) ? "rgba(255,255,255,0.9)" : "rgba(0,0,0,0.55)")
+      .style("stroke-width", "5px")
+      .style("font-weight", "900")
       .text(d => SisregUtils.formatarNumero(d.data.value));
   
     // Nome (abaixo)
