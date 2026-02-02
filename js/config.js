@@ -702,32 +702,55 @@ class SisregUtils {
     return null;
   }
   
-  // ==================== FIM DA CLASSE ====================
+  // ==================== CONTROLE DE SESSÃO ====================
 
-    // ====================
-    // CONTROLE DE SESSÃO
-    // ====================
-  
-    static setSessao(sessao) {
-      localStorage.setItem("SISREG_SESSAO", JSON.stringify(sessao));
-    }
-  
-    static getSessao() {
-      return JSON.parse(localStorage.getItem("SISREG_SESSAO") || "{}");
-    }
-  
-    static clearSessao() {
-      localStorage.removeItem("SISREG_SESSAO");
-    }
-  
+    /**
+     * Verifica se existe sessão válida
+     * Sessão válida = unidade definida
+     */
     static isLogado() {
-      const s = this.getSessao();
-      return !!(s.token && s.expiresAt && Date.now() < s.expiresAt);
+      const unidade = localStorage.getItem(SISREG_CONFIG.UNIDADE_SELECIONADA_KEY);
+      return Boolean(unidade);
     }
-  
+    
+    /**
+     * Verifica se usuário é MASTER
+     */
     static isMaster() {
-      const s = this.getSessao();
-      return this.isLogado() && s.perfil === "MASTER";
+      return localStorage.getItem(SISREG_CONFIG.UNIDADE_SELECIONADA_KEY) === "VERASEURIPEDES";
     }
-
+    
+    /**
+     * Limpa sessão atual
+     */
+    static clearSessao() {
+      localStorage.removeItem(SISREG_CONFIG.UNIDADE_SELECIONADA_KEY);
+      localStorage.removeItem(SISREG_CONFIG.CNES_SELECIONADO_KEY);
+    }
+    
+    /**
+     * Protege páginas internas contra acesso direto
+     * @param {"USER"|"MASTER"|"ANY"} perfil
+     */
+    static protegerPagina(perfil = "ANY") {
+      const logado = this.isLogado();
+      const master = this.isMaster();
+    
+      if (!logado) {
+        this.clearSessao();
+        window.location.href = SISREG_CONFIG.PAGINAS.INDEX;
+        return;
+      }
+    
+      if (perfil === "MASTER" && !master) {
+        window.location.href = SISREG_CONFIG.PAGINAS.DASHBOARD;
+        return;
+      }
+    
+      if (perfil === "USER" && master) {
+        window.location.href = SISREG_CONFIG.PAGINAS.DASHBOARD;
+        return;
+      }
+    }
 }
+  
