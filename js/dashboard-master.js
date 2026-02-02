@@ -4,9 +4,11 @@
 
 document.addEventListener("DOMContentLoaded", async () => {
 
-  // Bloqueio MASTER: só entra se for master
-  protegerPaginaMaster(SISREG_CONFIG.PAGINAS.INDEX);
-
+  if (!SisregUtils.isMaster()) {
+    SisregUtils.clearSessao();
+    window.location.href = SISREG_CONFIG.PAGINAS.INDEX;
+    return;
+  }
 
   // ==================== INICIALIZAÇÃO ====================
 
@@ -827,7 +829,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   document.getElementById("filtroUnidade")?.addEventListener("change", aplicarFiltros);
 
   document.getElementById("btnLogout").onclick = () => {
-    clearSessao();
+    SisregUtils.clearSessao();
     window.location.href = SISREG_CONFIG.PAGINAS.INDEX;    
   };
 
