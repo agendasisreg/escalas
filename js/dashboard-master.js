@@ -4,6 +4,10 @@
 
 document.addEventListener("DOMContentLoaded", async () => {
 
+  // Bloqueio MASTER: só entra se for master
+  protegerPaginaMaster(SISREG_CONFIG.PAGINAS.INDEX);
+
+
   // ==================== INICIALIZAÇÃO ====================
 
   // Carregar créditos
