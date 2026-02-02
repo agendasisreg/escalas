@@ -165,6 +165,27 @@ document.addEventListener("DOMContentLoaded", async () => {
       // =======================
       SisregUtils.setUnidade(unidadeSelecionada.NOME_FANTASIA, unidadeSelecionada.CODIGO_CNES);
 
+      // ==============================
+      // NOVO: criar sessão com expiração
+      // ==============================
+      const agora = Date.now();
+      const expiraEmHoras = 8; // ajuste se quiser (ex: 24)
+      const expiresAt = agora + (expiraEmHoras * 60 * 60 * 1000);
+      
+      const perfil = (String(unidadeSelecionada.TIPO || "").toUpperCase().includes("MASTER"))
+        ? "MASTER"
+        : "UNIDADE";
+      
+      // token simples só pra marcar sessão do navegador
+      setSessao({
+        unidade: unidadeSelecionada.NOME_FANTASIA,
+        cnes: unidadeSelecionada.CODIGO_CNES,
+        perfil,
+        token: `${agora}-${Math.random().toString(16).slice(2)}`,
+        expiresAt
+      });
+
+
       // Flag MASTER (gestor)
       const tipo = String(unidadeSelecionada.TIPO || "").toUpperCase().trim();
       const isMaster = (tipo === "MASTER");
