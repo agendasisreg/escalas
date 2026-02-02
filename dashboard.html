@@ -285,16 +285,20 @@
 
   <div class="card">
     <h3>🔄 Taxa de Renovação</h3>
-    <canvas id="gaugeChart"></canvas>
-    <div id="percText" class="gauge-percentage">0%</div>
-    <p class="gauge-label">Capacidade de absorção de novos pacientes</p>
+    <div class="chart-js-container gauge">
+      <canvas id="gaugeChart"></canvas>
+      <div id="percText" class="gauge-percentage">0%</div>
+      <p class="gauge-label">Capacidade de absorção de novos pacientes</p>
+    </div>
   </div>
   
   <!-- Card 2: Composição da Escala (substitui "Oferta por Horário") -->
   <div class="card">
     <h3>📊 Composição da Escala</h3>
-    <canvas id="donutChart"></canvas>
-    <div id="totalVagas" class="donut-total">Total: 0 Vagas</div>
+    <div class="chart-js-container donut">
+      <canvas id="donutChart"></canvas>
+      <div id="totalVagas" class="donut-total">Total: 0 Vagas</div>
+    </div>
   </div>
 
   <!-- Card 3: Evolucao da oferta -->
