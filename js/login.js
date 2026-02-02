@@ -175,6 +175,14 @@ document.addEventListener("DOMContentLoaded", async () => {
       const perfil = (String(unidadeSelecionada.TIPO || "").toUpperCase().includes("MASTER"))
         ? "MASTER"
         : "UNIDADE";
+
+      SisregUtils.setSessao({
+        unidade: unidadeSelecionada.NOME_FANTASIA,
+        cnes: unidadeSelecionada.CODIGO_CNES,
+        perfil,
+        token: `${agora}-${Math.random().toString(16).slice(2)}`,
+        expiresAt
+      });
       
       // token simples só pra marcar sessão do navegador
       setSessao({
