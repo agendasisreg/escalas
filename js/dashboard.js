@@ -3,6 +3,10 @@
 // ============================================================
 
 document.addEventListener("DOMContentLoaded", async () => {
+
+  // Bloqueio de acesso se não estiver logado
+  protegerPagina(SISREG_CONFIG.PAGINAS.INDEX);
+
   
   // ==================== INICIALIZAÇÃO ====================
   
