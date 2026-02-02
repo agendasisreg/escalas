@@ -827,7 +827,8 @@ document.addEventListener("DOMContentLoaded", async () => {
   document.getElementById("filtroUnidade")?.addEventListener("change", aplicarFiltros);
 
   document.getElementById("btnLogout").onclick = () => {
-    window.location.href = SISREG_CONFIG.PAGINAS.INDEX;
+    clearSessao();
+    window.location.href = SISREG_CONFIG.PAGINAS.INDEX;    
   };
 
   document.getElementById("btnExportarPDF").onclick = async () => {
