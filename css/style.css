@@ -298,6 +298,68 @@ body {
   line-height: 1.5;
 }
 
+/* =========================================================
+   GRÁFICOS RESPONSIVOS – CHART.JS
+   ========================================================= */
+
+.chart-js-container{
+  position: relative;
+  width: 100%;
+  height: 340px;
+}
+
+/* Gauge (Gráfico 1) */
+.chart-js-container.gauge{
+  height: 300px;
+}
+
+/* Donut (Gráfico 2) */
+.chart-js-container.donut{
+  height: 320px;
+}
+
+/* Linha (Gráfico 3) */
+.chart-js-container.line{
+  height: 440px;
+}
+
+/* =========================================================
+   GRÁFICOS D3 – AMPLIAÇÃO VISUAL
+   ========================================================= */
+
+.chart-container{
+  height: 420px !important;   /* antes: 320px */
+}
+
+/* Mobile */
+@media (max-width: 768px){
+  .chart-js-container{
+    height: 300px;
+  }
+  .chart-js-container.gauge{
+    height: 260px;
+  }
+  .chart-js-container.donut{
+    height: 280px;
+  }
+  .chart-js-container.line{
+    height: 380px;
+  }
+  .chart-container{
+    height: 360px !important;
+  }
+}
+
+/* Telas grandes */
+@media (min-width: 1400px){
+  .chart-js-container{
+    height: 380px;
+  }
+  .chart-container{
+    height: 460px !important;
+  }
+}
+
 /* ==================== KPI CARDS ==================== */
 .kpi-container {
   display: grid;
