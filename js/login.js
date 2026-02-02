@@ -160,7 +160,9 @@ document.addEventListener("DOMContentLoaded", async () => {
     if (senhaDigitada === unidadeSelecionada.CODIGO_CNES) {
       // Salvar unidade no localStorage
       SisregUtils.setUnidade(unidadeSelecionada.NOME_FANTASIA, unidadeSelecionada.CODIGO_CNES);
-      
+      // Salvar perfil do usuário (MASTER ou UNIDADE)
+      localStorage.setItem("perfil_usuario", unidadeSelecionada.TIPO || "UNIDADE");
+
       // Feedback visual
       const submitBtn = formLogin.querySelector('button[type="submit"]');
       if (submitBtn) {
@@ -170,7 +172,11 @@ document.addEventListener("DOMContentLoaded", async () => {
       // Redireciona para o Dashboard após pequeno delay
       setTimeout(() => {
         SisregUtils.showToast(SISREG_CONFIG.MENSAGENS.LOGIN_SUCESSO, "success");
-        window.location.href = SISREG_CONFIG.PAGINAS.DASHBOARD;
+        if (unidadeSelecionada.TIPO === "MASTER") {
+          window.location.href = "dashboard-master.html";
+        } else {
+          window.location.href = SISREG_CONFIG.PAGINAS.DASHBOARD;
+        }
       }, 1000);
     } else {
       // Senha incorreta
