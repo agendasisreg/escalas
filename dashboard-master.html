@@ -2,37 +2,51 @@
 <html lang="pt-BR">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+
   <title>Dashboard Master | Agenda SISREG</title>
 
+  <!-- CSS -->
   <link rel="stylesheet" href="css/theme.css">
   <link rel="stylesheet" href="css/style.css">
 
+  <!-- Libs -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <script src="https://d3js.org/d3.v7.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 </head>
 
 <body>
 
+<!-- ================= HEADER ================= -->
 <header class="dash-header">
-  <h1>📊 Dashboard Geral — Todas as Unidades</h1>
-  <p>Visão consolidada do SISREG</p>
+  <div class="container unit-info">
+    <h1>📊 Dashboard Geral – Gestor</h1>
+    <p>Visão consolidada de todas as unidades</p>
+
+    <div class="actions-bar">
+      <button id="btnSincronizar" class="btn-main btn-sync">🔄 Sincronizar</button>
+      <button id="btnExportarPDF" class="btn-main">📄 Exportar PDF</button>
+      <button id="btnLogout" class="btn-main btn-logout">🚪 Sair</button>
+    </div>
+  </div>
 </header>
 
-<!-- FILTROS -->
-<section class="filter-section" style="display:flex;gap:16px;flex-wrap:wrap;">
+<!-- ================= FILTROS ================= -->
+<section class="filter-section">
   
   <!-- FILTRO DE UNIDADE (MASTER) -->
   <div>
-    <label>Unidade:</label>
+    <label for="filtroUnidade">Unidade</label>
     <select id="filtroUnidade">
       <option value="ALL">Todas as unidades</option>
     </select>
   </div>
 
-  <!-- FILTRO DE MÊS (JÁ EXISTENTE) -->
+  <!-- FILTRO DE MÊS -->
   <div>
-    <label>Mês:</label>
+    <label for="filtroMes">Mês</label>
     <select id="filtroMes">
       <option value="todos">Todos</option>
       <option value="01">Jan</option>
@@ -52,23 +66,107 @@
 
 </section>
 
-<!-- KPIs -->
+<!-- ================= KPIs ================= -->
 <section class="kpi-container">
-  <div class="kpi-card"><h3>Total de Vagas</h3><p id="kpiVagas">0</p></div>
-  <div class="kpi-card"><h3>% Retorno</h3><p id="kpiRetorno">0%</p></div>
-  <div class="kpi-card"><h3>Profissionais</h3><p id="kpiProfissionais">0</p></div>
-  <div class="kpi-card"><h3>Procedimentos</h3><p id="kpiProcedimentos">0</p></div>
+  <div class="kpi-card">
+    <h3>Total de Vagas</h3>
+    <p id="kpiVagas">0</p>
+  </div>
+
+  <div class="kpi-card">
+    <h3>% Retorno</h3>
+    <p id="kpiRetorno">0%</p>
+  </div>
+
+  <div class="kpi-card">
+    <h3>Profissionais</h3>
+    <p id="kpiProfissionais">0</p>
+  </div>
+
+  <div class="kpi-card">
+    <h3>Procedimentos</h3>
+    <p id="kpiProcedimentos">0</p>
+  </div>
 </section>
 
-<!-- ÁREA DOS GRÁFICOS -->
-<main class="container" id="dashboardArea">
-  <!-- reutiliza exatamente os mesmos cards e canvases -->
-  <!-- NÃO muda nada estrutural aqui -->
+<!-- ================= DASHBOARD ================= -->
+<main id="dashboardArea" class="container">
+
+  <div class="dashboard-grid">
+
+    <!-- GRÁFICO 1 -->
+    <div class="card">
+      <h3>Taxa de Renovação</h3>
+      <div style="position:relative;height:280px;">
+        <canvas id="gaugeChart"></canvas>
+        <div id="percText" style="
+          position:absolute;
+          top:50%;
+          left:50%;
+          transform:translate(-50%,-10%);
+          font-size:2rem;
+          font-weight:900;">
+          0%
+        </div>
+      </div>
+    </div>
+
+    <!-- GRÁFICO 2 -->
+    <div class="card">
+      <h3>Composição da Escala</h3>
+      <canvas id="donutChart"></canvas>
+      <p id="totalVagas" style="text-align:center;font-weight:700;"></p>
+    </div>
+
+    <!-- GRÁFICO 3 -->
+    <div class="card full-width">
+      <h3>Evolução Mensal da Oferta</h3>
+      <canvas id="evolutionChart"></canvas>
+    </div>
+
+    <!-- GRÁFICO 4 -->
+    <div class="card">
+      <h3>Oferta por Especialidade</h3>
+      <div id="chartProcedimentos" style="height:360px;"></div>
+    </div>
+
+    <!-- GRÁFICO 5 -->
+    <div class="card">
+      <h3>Oferta por Profissional</h3>
+      <div id="chartProfissionais" style="height:360px;"></div>
+    </div>
+
+    <!-- INSIGHTS -->
+    <div class="card full-width">
+      <h3>Insights Automáticos</h3>
+      <ul id="listaInsights"></ul>
+    </div>
+
+  </div>
+
 </main>
 
-<footer id="footerCreditos"></footer>
+<!-- ================= FOOTER ================= -->
+<footer class="app-footer">
+  <p id="footerCreditos"></p>
+</footer>
 
+<!-- ================= TOOLTIP D3 ================= -->
+<div id="vizTooltip" style="
+  position:absolute;
+  display:none;
+  background:rgba(0,0,0,0.85);
+  color:#fff;
+  padding:10px 14px;
+  border-radius:8px;
+  font-size:14px;
+  pointer-events:none;
+  z-index:9999;
+"></div>
+
+<!-- ================= SCRIPTS ================= -->
 <script src="js/config.js"></script>
+<script src="js/utils.js"></script>
 <script src="js/dashboard.js"></script>
 
 </body>
