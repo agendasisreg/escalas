@@ -3,11 +3,7 @@
 // ============================================================
 
 document.addEventListener("DOMContentLoaded", async () => {
-    if (!SisregUtils.isLogado()) {
-      SisregUtils.clearSessao();
-      window.location.href = SISREG_CONFIG.PAGINAS.INDEX;
-      return;
-    }
+    SisregUtils.protegerPagina("USER");
   
   // ==================== INICIALIZAÇÃO ====================
   
