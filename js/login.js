@@ -176,23 +176,12 @@ document.addEventListener("DOMContentLoaded", async () => {
         ? "MASTER"
         : "UNIDADE";
 
-      SisregUtils.setSessao({
+      localStorage.setItem("SISREG_SESSAO", JSON.stringify({
         unidade: unidadeSelecionada.NOME_FANTASIA,
         cnes: unidadeSelecionada.CODIGO_CNES,
         perfil,
-        token: `${agora}-${Math.random().toString(16).slice(2)}`,
         expiresAt
-      });
-      
-      // token simples só pra marcar sessão do navegador
-      setSessao({
-        unidade: unidadeSelecionada.NOME_FANTASIA,
-        cnes: unidadeSelecionada.CODIGO_CNES,
-        perfil,
-        token: `${agora}-${Math.random().toString(16).slice(2)}`,
-        expiresAt
-      });
-
+      }));
 
       // Flag MASTER (gestor)
       const tipo = String(unidadeSelecionada.TIPO || "").toUpperCase().trim();
